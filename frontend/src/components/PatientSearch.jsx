@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useBooking } from '../context/BookingContext';
-import { mockPatients } from '../mockData';
+import AddPatientModal from './AddPatientModal';
 
 const PatientSearch = () => {
   const { searchPatients, setSelectedPatient, selectedPatient } = useBooking();
@@ -8,6 +8,7 @@ const PatientSearch = () => {
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [showModal, setShowModal] = useState(false);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -38,13 +39,8 @@ const PatientSearch = () => {
   };
 
   const handleAddNew = () => {
-    const newPatient = {
-      id: `p-${Date.now()}`,
-      name: query,
-      phone: 'Pending...'
-    };
-    mockPatients.push(newPatient); // local mock update
-    handleSelect(newPatient);
+    setShowModal(true);
+    setIsOpen(false);
   };
 
   const handleKeyDown = (e) => {
@@ -66,55 +62,62 @@ const PatientSearch = () => {
   };
 
   return (
-    <div className="card w-full" style={{ position: 'relative' }} ref={wrapperRef}>
-      <h3 className="text-lg font-semibold mb-2">1. Select Patient</h3>
-      <div className="focus-ring" style={{ position: 'relative' }}>
-        <input 
-          type="text" 
-          className="w-full"
-          placeholder="Search name/phone (e.g. Rahul) or type new to add..." 
-          value={selectedPatient ? selectedPatient.name + ' - ' + selectedPatient.phone : query}
-          onChange={(e) => {
-            if(selectedPatient) setSelectedPatient(null);
-            setQuery(e.target.value);
-          }}
-          onKeyDown={handleKeyDown}
-          autoFocus
-        />
-        {isOpen && (
-          <div className="search-results">
-            {results.map((p, index) => (
-              <div 
-                key={p.id} 
-                className="search-item"
-                style={{ backgroundColor: highlightedIndex === index ? 'var(--secondary)' : 'white' }}
-                onClick={() => handleSelect(p)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-              >
-                <div className="font-semibold">{p.name}</div>
-                <div className="text-muted text-sm">{p.phone}</div>
-              </div>
-            ))}
-            {results.length === 0 && query.trim() && (
-              <div 
-                className="search-item" 
-                style={{ backgroundColor: highlightedIndex === 0 ? 'var(--success)' : 'var(--background)', color: highlightedIndex === 0 ? 'white' : 'var(--text-main)' }}
-                onClick={handleAddNew}
-                onMouseEnter={() => setHighlightedIndex(0)}
-              >
-                <div className="font-semibold">+ Register New Patient</div>
-                <div className="text-sm opacity-80">"{query}"</div>
-              </div>
-            )}
+    <>
+      <div className="card w-full" style={{ position: 'relative' }} ref={wrapperRef}>
+        <h3 className="text-lg font-semibold mb-2">1. Select Patient</h3>
+        <div className="focus-ring" style={{ position: 'relative' }}>
+          <input 
+            type="text" 
+            className="w-full"
+            placeholder="Search name/phone (e.g. Rahul) or type new to add..." 
+            value={selectedPatient ? selectedPatient.name + ' - ' + selectedPatient.phone : query}
+            onChange={(e) => {
+              if(selectedPatient) setSelectedPatient(null);
+              setQuery(e.target.value);
+            }}
+            onKeyDown={handleKeyDown}
+            autoFocus
+          />
+          {isOpen && (
+            <div className="search-results">
+              {results.map((p, index) => (
+                <div 
+                  key={p.id} 
+                  className="search-item"
+                  style={{ backgroundColor: highlightedIndex === index ? 'var(--secondary)' : 'white' }}
+                  onClick={() => handleSelect(p)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                >
+                  <div className="font-semibold">{p.name}</div>
+                  <div className="text-muted text-sm">{p.phone}</div>
+                </div>
+              ))}
+              {results.length === 0 && query.trim() && (
+                <div 
+                  className="search-item" 
+                  style={{ backgroundColor: highlightedIndex === 0 ? 'var(--success)' : 'var(--background)', color: highlightedIndex === 0 ? 'white' : 'var(--text-main)' }}
+                  onClick={handleAddNew}
+                  onMouseEnter={() => setHighlightedIndex(0)}
+                >
+                  <div className="font-semibold">+ Add New Patient</div>
+                  <div className="text-sm opacity-80">"{query}"</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {selectedPatient && (
+          <div className="mt-2 text-success font-semibold">
+            ✓ Patient Selected: {selectedPatient.name} ({selectedPatient.phone})
           </div>
         )}
       </div>
-      {selectedPatient && (
-        <div className="mt-2 text-success font-semibold">
-          ✓ Patient Selected: {selectedPatient.name} ({selectedPatient.id})
-        </div>
-      )}
-    </div>
+      <AddPatientModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        initialName={query} 
+      />
+    </>
   );
 };
 export default PatientSearch;

@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import PatientSearch from './PatientSearch';
 import DoctorAvailability from './DoctorAvailability';
 import QuickBookingPanel from './QuickBookingPanel';
+import TokenQueueCard from './TokenQueueCard';
+import ModifyAppointments from './ModifyAppointments';
 import { useBooking } from '../context/BookingContext';
 
 const Dashboard = () => {
@@ -31,24 +33,13 @@ const Dashboard = () => {
       <div className="flex flex-col gap-6" style={{ flex: 2 }}>
         <PatientSearch />
         <DoctorAvailability />
+        <ModifyAppointments />
       </div>
 
       {/* Right Column for Confirmation */}
       <div className="flex flex-col gap-6" style={{ flex: 1, position: 'sticky', top: '2rem' }}>
         <QuickBookingPanel />
-
-        {/* Simple Status Card */}
-        <div className="card w-full mt-4 bg-white">
-          <h3 className="text-lg font-semibold mb-2">Today's Overview</h3>
-          <div className="flex justify-between mb-2">
-            <span className="text-muted">Total Appointments</span>
-            <span className="font-semibold text-lg text-primary">42</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Wait time (avg.)</span>
-            <span className="font-semibold text-lg text-danger">15m</span>
-          </div>
-        </div>
+        <TokenQueueCard />
       </div>
 
     </div>

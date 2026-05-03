@@ -12,8 +12,22 @@ const DoctorAvailability = () => {
   const handleDoctorClick = (doc) => {
     if (!doc.available) return;
     setSelectedDoctor(doc);
-    // Auto-select earliest slot to map to UX speed constraint
-    setSelectedSlot(mockSlots[0]); 
+    // Auto-select next available slot
+    const nextSlot = mockSlots.find(slot => slot.available);
+    if (nextSlot) setSelectedSlot(nextSlot);
+  };
+
+  const getSlotStatus = (slot, doc) => {
+    if (selectedDoctor?.id === doc.id && selectedSlot?.id === slot.id) return 'selected';
+    if (!slot.available) return 'booked';
+    return 'available';
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'On Time') return 'var(--success)';
+    if (status.includes('late')) return 'var(--warning)';
+    if (status === 'On Leave' || status === 'Emergency Busy') return 'var(--danger)';
+    return 'var(--text-muted)';
   };
 
   return (
@@ -60,17 +74,31 @@ const DoctorAvailability = () => {
                   <div className="font-semibold text-lg">{doc.name}</div>
                   <div className="text-muted text-sm">{doc.department}</div>
                 </div>
-                {!doc.available && <span className="text-danger font-semibold">UNAVAILABLE</span>}
+                <div className="text-right">
+                  {!doc.available && <span className="text-danger font-semibold">UNAVAILABLE</span>}
+                  {doc.available && (
+                    <div style={{ color: getStatusColor(doc.status), fontSize: '0.875rem', fontWeight: '500' }}>
+                      {doc.status}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {doc.available && (
                 <div className="slot-grid">
                   {mockSlots.map(slot => {
-                    const isSelected = selectedDoctor?.id === doc.id && selectedSlot?.id === slot.id;
+                    const status = getSlotStatus(slot, doc);
+                    const isHighlighted = status === 'available' && !selectedSlot && slot === mockSlots.find(s => s.available);
                     return (
                       <button 
                         key={slot.id}
-                        className={`slot-btn ${isSelected ? 'selected' : ''}`}
+                        className={`slot-btn ${status}`}
+                        style={{
+                          backgroundColor: status === 'selected' ? 'var(--primary)' : status === 'booked' ? 'var(--muted)' : isHighlighted ? '#e0f2fe' : 'white',
+                          color: status === 'selected' ? 'white' : status === 'booked' ? 'var(--text-muted)' : 'var(--text-main)',
+                          border: isHighlighted ? '2px solid var(--primary)' : '1px solid var(--border)'
+                        }}
+                        disabled={status === 'booked'}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedDoctor(doc);
