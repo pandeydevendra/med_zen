@@ -13,3 +13,8 @@ def sum_numbers(a: int, b: int):
     result = a + b
     print(f" Result: {result}")   
     return {"a": a, "b": b, "sum": result}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
