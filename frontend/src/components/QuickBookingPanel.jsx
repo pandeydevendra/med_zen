@@ -2,27 +2,37 @@ import React, { useState } from 'react';
 import { useBooking } from '../context/BookingContext';
 
 const QuickBookingPanel = () => {
-  const { selectedPatient, selectedDoctor, selectedSlot, confirmBooking } = useBooking();
+  const { selectedPatient, selectedDoctor, selectedSlot, confirmBooking, queue } = useBooking();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [confirmedAppointment, setConfirmedAppointment] = useState(null);
 
   const handleConfirm = () => {
     setLoading(true);
     setTimeout(() => {
-      confirmBooking();
+      const appointment = confirmBooking();
       setLoading(false);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setConfirmedAppointment(appointment);
     }, 400); // Simulate brief network call
+  };
+
+  const handleBookNext = () => {
+    setConfirmedAppointment(null);
   };
 
   const isReady = selectedPatient && selectedDoctor && selectedSlot;
 
-  if (success) {
+  if (confirmedAppointment) {
     return (
       <div className="card w-full" style={{ background: 'var(--success)', color: 'white' }}>
-        <h3 className="text-xl font-semibold m-0 text-center">✓ Appointment Confirmed!</h3>
-        <p className="text-center mt-2">Ready for next patient.</p>
+        <h3 className="text-xl font-semibold m-0 text-center mb-4">✅ Appointment Booked Successfully</h3>
+        <div className="text-center mb-4">
+          <div className="text-lg">Token No: <strong>{confirmedAppointment.token}</strong></div>
+          <div>Time: <strong>{confirmedAppointment.slot.time}</strong></div>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn-outline flex-1" style={{ background: 'white', color: 'var(--success)' }}>Print Slip</button>
+          <button className="btn-primary flex-1" onClick={handleBookNext}>Book Next Patient</button>
+        </div>
       </div>
     );
   }
@@ -37,12 +47,28 @@ const QuickBookingPanel = () => {
           <span className="font-semibold">{selectedPatient ? selectedPatient.name : '—'}</span>
         </div>
         <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <span className="text-muted">Phone:</span>
+          <span className="font-semibold">{selectedPatient ? selectedPatient.phone : '—'}</span>
+        </div>
+        <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
           <span className="text-muted">Doctor:</span>
           <span className="font-semibold">{selectedDoctor ? selectedDoctor.name : '—'}</span>
         </div>
         <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
-          <span className="text-muted">Time:</span>
+          <span className="text-muted">Department:</span>
+          <span className="font-semibold">{selectedDoctor ? selectedDoctor.department : '—'}</span>
+        </div>
+        <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <span className="text-muted">Appointment Time:</span>
           <span className="font-semibold">{selectedSlot ? selectedSlot.time : '—'}</span>
+        </div>
+        <div className="flex justify-between border-bottom pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <span className="text-muted">Est. Wait Time:</span>
+          <span className="font-semibold">{selectedDoctor ? `${selectedDoctor.delay} min` : '—'}</span>
+        </div>
+        <div className="flex justify-between pb-2">
+          <span className="text-muted">Token No (Preview):</span>
+          <span className="font-semibold">{isReady ? '27' : '—'}</span>
         </div>
       </div>
 
@@ -52,7 +78,7 @@ const QuickBookingPanel = () => {
         disabled={!isReady || loading}
         onClick={handleConfirm}
       >
-        {loading ? 'Confirming...' : (isReady ? 'CONFIRM BOOKING (Enter)' : 'Select Details')}
+        {loading ? 'Confirming...' : (isReady ? 'Confirm Appointment' : 'Select Details')}
       </button>
     </div>
   );
