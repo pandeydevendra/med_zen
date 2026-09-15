@@ -1,18 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 
 app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
 
 
-@app.get("/sum")
-def sum_numbers(a: int, b: int):
-    print(f" Input: {locals()}")
-    result = a + b
-    print(f" Result: {result}")   
-    return {"a": a, "b": b, "sum": result}
+@app.get("/healthceck")
+def healthceck():
+    return {"status": "ok", "status_code": status.HTTP_200_OK}
 
 
 if __name__ == "__main__":
