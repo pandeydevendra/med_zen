@@ -18,3 +18,8 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local-only POC
+poc.txt
+.ipynb_checkpoints/
+*.ipynb
