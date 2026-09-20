@@ -9,6 +9,7 @@ sys.stdout.reconfigure(line_buffering=True)
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 # Pick the env file with ENV_NAME (local_dev or prod); defaults to local_dev.
@@ -25,6 +26,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://med-zen.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -35,14 +37,17 @@ app.add_middleware(
 # In production the built frontend (frontend/dist) is served from "/" next to the
 # API under "/api". Without a build, "/" just returns a welcome message.
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+FRONTEND_INDEX = FRONTEND_DIST / "index.html"
 
-if FRONTEND_DIST.is_dir():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
-else:
+if (FRONTEND_DIST / "assets").is_dir():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
 
-    @app.get("/")
-    def read_root():
-        return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
+
+@app.get("/", include_in_schema=False)
+def read_root():
+    if FRONTEND_INDEX.is_file():
+        return FileResponse(FRONTEND_INDEX)
+    return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
 
 
 if __name__ == "__main__":

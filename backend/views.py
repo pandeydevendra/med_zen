@@ -3,6 +3,7 @@ Request handlers and request/response models. The URLs that map to these
 handlers are listed in url.py.
 """
 
+import os
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -14,7 +15,11 @@ from menu import get_menu_items
 
 
 def healthceck():
-    return {"status": "ok", "status_code": status.HTTP_200_OK}
+    return {
+        "status": "ok",
+        "status_code": status.HTTP_200_OK,
+        "env_name": os.environ.get("ENV_NAME", "local_dev"),
+    }
 
 
 def menu(role: str = "receptionist"):

@@ -4,8 +4,10 @@ __pycache__/
 *.egg-info/
 venv/
 .venv/
-env/
+/env/
 *.env
+# Frontend env files hold only public URLs (no secrets) and are committed.
+!frontend/env/*.env
 
 # Node
 node_modules/
