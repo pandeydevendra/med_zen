@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const SUGGESTIONS = [
   'List all doctors',
@@ -44,7 +44,7 @@ const DoctorAgentChat = () => {
     setInput('');
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/agent/ask`, {
+      const res = await fetch(`${API_URL}/v1/agent/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, question: q }),
@@ -71,7 +71,7 @@ const DoctorAgentChat = () => {
     setMessages([{ role: 'assistant', content: 'Chat cleared. Ask me anything about doctor availability!' }]);
     setError('');
     try {
-      await fetch(`${API_BASE}/api/agent/reset`, {
+      await fetch(`${API_URL}/v1/agent/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId }),

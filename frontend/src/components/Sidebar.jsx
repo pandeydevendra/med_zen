@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const Sidebar = ({ page = 'dashboard', onNavigate, role = 'receptionist', collapsed = false }) => {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/menu?role=${encodeURIComponent(role)}`)
+    fetch(`${API_URL}/v1/menu?role=${encodeURIComponent(role)}`)
       .then(res => res.json())
       .then(data => {
         if (!cancelled) setItems(data.items || []);
