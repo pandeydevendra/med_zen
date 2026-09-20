@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const DoctorFilterPanel = () => {
   const [filters, setFilters] = useState({ specialty: '', day: '' });
@@ -10,7 +10,7 @@ const DoctorFilterPanel = () => {
   const [error, setError] = useState('');
 
   const fetchFilterOptions = useCallback(() => {
-    return fetch(`${API_BASE}/api/doctors/filters`)
+    return fetch(`${API_URL}/v1/doctors/filters`)
       .then(res => res.json())
       .then(setOptions)
       .catch(() => {});
@@ -23,7 +23,7 @@ const DoctorFilterPanel = () => {
 
     setLoading(true);
     setError('');
-    return fetch(`${API_BASE}/api/doctors?${params.toString()}`)
+    return fetch(`${API_URL}/v1/doctors?${params.toString()}`)
       .then(res => {
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         return res.json();
