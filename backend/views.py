@@ -5,12 +5,16 @@ handlers are listed in url.py.
 
 from typing import Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from auth import verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
 from menu import get_menu_items
+
+
+def healthceck():
+    return {"status": "ok", "status_code": status.HTTP_200_OK}
 
 
 def menu(role: str = "receptionist"):

@@ -23,7 +23,16 @@ Start the development server:
 npm run dev
 ```
 
-This launches the Vite development server and makes the app available locally, usually at `http://localhost:5173`.
+This launches the Vite development server and makes the app available locally, usually at `http://localhost:5173`. It uses `env/local_dev.env`.
+
+The app talks to the backend at `VITE_API_URL` (`http://127.0.0.1:8000/api` locally), so start the backend in another terminal first:
+
+```bash
+cd ../backend
+uvicorn main:app --reload
+```
+
+To run the frontend against the prod API instead, use `npm run dev:prod`.
 
 ## Build for production
 
