@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_URL } from '../constants';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');

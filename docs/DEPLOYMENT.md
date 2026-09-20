@@ -9,7 +9,7 @@ MediZen is a FastAPI backend and a React (Vite) frontend.
 
 Locally they run as two processes. On Render they run as **one** Web Service: FastAPI serves the API under `/api` and the built frontend (`frontend/dist`) at `/`, so both share one address and no CORS setup is needed.
 
-Configuration comes from the `env/` folders (`backend/env/`, `frontend/env/`). These are git-ignored, so they only exist on your machine. On Render you set the same variables in the dashboard instead. See [Environment variables](#environment-variables).
+Configuration comes from the `env/` folders (`backend/env/`, `frontend/env/`). The `backend/env/` files hold secrets (OpenAI key, demo password), so they are git-ignored and only exist on your machine; on Render you set those variables in the dashboard instead. The `frontend/env/` files hold only public URLs, so they are committed to git and the Render build reads them. See [Environment variables](#environment-variables).
 
 ---
 
@@ -18,7 +18,7 @@ Configuration comes from the `env/` folders (`backend/env/`, `frontend/env/`). T
 ### Prerequisites
 
 - Python 3.10+ and Node.js 18+
-- `backend/env/local_dev.env` and `frontend/env/local_dev.env` exist (see the table at the end of this doc, and add your `OPENAI_API_KEY`)
+- `backend/env/local_dev.env` exists (copy `local_dev.env.example` and add your `OPENAI_API_KEY`). `frontend/env/local_dev.env` is already in git
 
 ### Step 1 — Start the backend (port 8000)
 
@@ -30,7 +30,7 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0   # loads env/local_dev.env by default
 ```
 
-Check it: <http://127.0.0.1:8000/api/healthceck> should return `{"status":"ok","status_code":200}`. Interactive API docs are at <http://127.0.0.1:8000/docs>.
+Check it: <http://127.0.0.1:8000/api/healthceck> should return `{"status":"ok","status_code":200,"env_name":"local_dev"}`. Interactive API docs are at <http://127.0.0.1:8000/docs>.
 
 ### Step 2 — Start the frontend (port 5173)
 
@@ -91,22 +91,22 @@ Environment variables (Render dashboard → Environment). The `VITE_*` values ar
 | `DEMO_PASSWORD` | a strong password |
 | `VITE_ENV_NAME` | `prod` |
 | `VITE_API_URL` | `https://med-zen.onrender.com/api` |
-| `VITE_SAAS_URL` | `https://med-zen.onrender.com/` |
+| `VITE_SAAS_URL` | `https://med-zen.onrender.com` |
 
 Set `DEMO_USERNAME` and `DEMO_PASSWORD` for anything reachable from the internet. Without them the demo defaults from the source code apply.
 
-`env/prod.env` is not in git, so on Render both the backend and the build simply use the dashboard variables. `npm run build` uses the `prod` mode.
+`frontend/env/prod.env` is committed, so the Render build gets the `VITE_*` values from it even without dashboard entries (a variable set in the dashboard still wins). `backend/env/prod.env` is not in git, so the backend uses the dashboard variables. `npm run build` uses the `prod` mode.
 
 ### Verify
 
 1. <https://med-zen.onrender.com/> shows the portal login page.
-2. <https://med-zen.onrender.com/api/healthceck> returns `{"status":"ok","status_code":200}`.
+2. <https://med-zen.onrender.com/api/healthceck> returns `{"status":"ok","status_code":200,"env_name":"prod"}` (`env_name` shows which environment the backend is running).
 3. <https://med-zen.onrender.com/docs> shows the API docs.
 4. Log in and use the app. Calls go to `https://med-zen.onrender.com/api/v1/...`.
 
 ### Notes
 
-- The `VITE_*` values are baked in at build time, so trigger a new deploy after changing them.
+- The `VITE_*` values are baked in at build time, so trigger a new deploy after changing them. If `VITE_API_URL` is missing, a production build falls back to the same-origin `/api`, and a dev build to `http://localhost:8000/api`.
 - The build needs both Python and Node.js. If the build fails with `npm: command not found`, add a Node.js runtime (for example by deploying with a Dockerfile that installs both).
 - On Render's free plan the service sleeps after a period of inactivity, so the first request after a pause can take about a minute.
 - `frontend/dist` is tracked in git. The Render build regenerates it, but you can stop tracking it with `git rm -r --cached frontend/dist`.
@@ -118,11 +118,12 @@ Set `DEMO_USERNAME` and `DEMO_PASSWORD` for anything reachable from the internet
 | Backend (`backend/env/*.env`) | Frontend (`frontend/env/*.env`) | `local_dev` | `prod` |
 |---|---|---|---|
 | `ENV_NAME` | `VITE_ENV_NAME` | `local_dev` | `prod` |
-| `API_URL` | `VITE_API_URL` | `http://127.0.0.1:8000/api` | `https://med-zen.onrender.com/api` |
-| `SAAS_URL` | `VITE_SAAS_URL` | `http://localhost:5173/` | `https://med-zen.onrender.com/` |
+| — | `VITE_API_URL` | `http://127.0.0.1:8000/api` | `https://med-zen.onrender.com/api` |
+| — | `VITE_SAAS_URL` | `http://localhost:5173` | `https://med-zen.onrender.com` |
 | `OPENAI_API_KEY` | — | your key | your key |
+| `DEMO_USERNAME` / `DEMO_PASSWORD` | — | your choice | your choice |
 
-Vite only exposes variables that start with `VITE_` to the browser.
+Vite only exposes variables that start with `VITE_` to the browser. The backend does not use the API and site URLs, so they only exist on the frontend side.
 
 ## Troubleshooting
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+import { API_URL } from '../constants';
 
 const Sidebar = ({ page = 'dashboard', onNavigate, role = 'receptionist', collapsed = false }) => {
   const [items, setItems] = useState([]);

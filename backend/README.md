@@ -30,8 +30,6 @@ Config lives in [env/](env/) — one file per environment (`local_dev.env`, `pro
 |---|---|
 | `ENV_NAME` | Environment name (`local_dev` or `prod`) |
 | `OPENAI_API_KEY` | OpenAI key for the doctor agent |
-| `API_URL` | Base URL of the API |
-| `SAAS_URL` | Base URL of the site |
 
 Run locally (loads `env/local_dev.env`):
 
