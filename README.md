@@ -6,7 +6,7 @@ MediZen is a hospital management platform with a FastAPI backend and a React (Vi
 
 - [backend/](backend/) — FastAPI backend. See [backend/README.md](backend/README.md) for setup.
 - [frontend/](frontend/) — React + Vite frontend.
-- [docs/](docs/) — Project documentation.
+- [docs/](docs/) — Project documentation, including the [deployment guide](docs/DEPLOYMENT.md) (local and Render).
 
 ## Getting Started
 
@@ -26,9 +26,15 @@ API available at [http://127.0.0.1:8000](http://127.0.0.1:8000), interactive doc
 
 ```bash
 cd frontend
-npm install
+npm install        # first time only
 npm run dev
 ```
+
+Open [http://localhost:5173](http://localhost:5173). The frontend calls the backend at `http://127.0.0.1:8000/api/v1/...`, so run the backend in a separate terminal at the same time.
+
+### Editor setup (VS Code)
+
+Install the **Python** extension (`ms-python.python`, includes Pylance) for Python code navigation, and select the project's interpreter (bottom-right of the window). Import paths for `backend/` are already set in [.vscode/settings.json](.vscode/settings.json).
 
 ## Running with an environment
 

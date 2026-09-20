@@ -9,6 +9,7 @@ sys.stdout.reconfigure(line_buffering=True)
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # Pick the env file with ENV_NAME (local_dev or prod); defaults to local_dev.
 ENV_NAME = os.environ.get("ENV_NAME", "local_dev")
@@ -31,14 +32,17 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def read_root():
-    return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
+# In production the built frontend (frontend/dist) is served from "/" next to the
+# API under "/api". Without a build, "/" just returns a welcome message.
+FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+else:
 
-@app.get("/healthceck")
-def healthceck():
-    return {"status": "ok", "status_code": status.HTTP_200_OK}
+    @app.get("/")
+    def read_root():
+        return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
 
 
 if __name__ == "__main__":

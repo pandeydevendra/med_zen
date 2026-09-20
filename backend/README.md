@@ -55,4 +55,4 @@ On a host like Render, set `ENV_NAME=prod` as an environment variable and use `u
 
 ## API
 
-The endpoint list is in [url.py](url.py) (URL → handler), the handlers are in [views.py](views.py), and everything is served under `/api/v1` (e.g. `POST /api/v1/auth/login`, `GET /api/v1/doctors`). To introduce a breaking change, add a new router with a `/api/v2` prefix and keep `/api/v1` running. `/` and `/healthceck` are unversioned.
+The endpoint list is in [url.py](url.py) (URL → handler), the handlers are in [views.py](views.py), and everything is served under `/api`. Versioned endpoints live under `/api/v1` (e.g. `POST /api/v1/auth/login`, `GET /api/v1/doctors`); to introduce a breaking change, add a router with a `/v2` prefix and keep `/api/v1` running. The health check is unversioned at `GET /api/healthceck`, and `/` returns a welcome message.
