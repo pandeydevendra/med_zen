@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from auth import verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
-from hospitals import add_hospital, list_hospitals
+from hospitals import FACILITY_TYPES, add_hospital, list_hospitals
 from menu import get_menu_items
 
 
@@ -122,6 +122,7 @@ class OnboardHospitalRequest(BaseModel):
     address: Optional[str] = None
     admin_username: str
     admin_password: str
+    facility_type: str = "Hospital"
 
 
 class HospitalSummary(BaseModel):
@@ -129,6 +130,7 @@ class HospitalSummary(BaseModel):
     hospital_name: str
     address: Optional[str] = None
     admin_username: str
+    facility_type: str
 
 
 def _to_summary(hospital: dict) -> HospitalSummary:
@@ -137,19 +139,24 @@ def _to_summary(hospital: dict) -> HospitalSummary:
         hospital_name=hospital["name"],
         address=hospital["address"],
         admin_username=hospital["admin_username"],
+        facility_type=hospital["facility_type"],
     )
 
 
 def onboard_hospital(payload: OnboardHospitalRequest):
-    print(f"[tse_ops] onboarding hospital={payload.hospital_name!r} admin={payload.admin_username!r}")
+    print(f"[tse_ops] onboarding {payload.facility_type}={payload.hospital_name!r} admin={payload.admin_username!r}")
     hospital = add_hospital(
         name=payload.hospital_name,
         address=payload.address,
         admin_username=payload.admin_username,
         admin_password=payload.admin_password,
+        facility_type=payload.facility_type,
     )
     return _to_summary(hospital)
 
 
 def tse_ops_hospitals():
-    return {"hospitals": [_to_summary(h) for h in list_hospitals()]}
+    return {
+        "hospitals": [_to_summary(h) for h in list_hospitals()],
+        "facility_types": FACILITY_TYPES,
+    }
