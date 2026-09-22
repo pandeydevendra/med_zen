@@ -18,4 +18,10 @@ v1.add_api_route("/doctors/filters", views.doctor_filters, methods=["GET"])
 v1.add_api_route("/agent/ask", views.ask_agent, methods=["POST"], response_model=views.AskResponse)
 v1.add_api_route("/agent/reset", views.reset_agent, methods=["POST"])
 
+# tse_ops — hospital onboarding. Login is the same POST /v1/auth/login above.
+v1.add_api_route(
+    "/tse-ops/hospitals", views.onboard_hospital, methods=["POST"], response_model=views.HospitalSummary
+)
+v1.add_api_route("/tse-ops/hospitals", views.tse_ops_hospitals, methods=["GET"])
+
 router.include_router(v1)
