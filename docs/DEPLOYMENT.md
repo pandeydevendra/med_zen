@@ -100,7 +100,7 @@ Set `DEMO_USERNAME` and `DEMO_PASSWORD` for anything reachable from the internet
 ### Verify
 
 1. <https://med-zen.onrender.com/> shows the portal login page.
-2. <https://med-zen.onrender.com/api/healthceck> returns `{"status":"ok","status_code":200,"env_name":"prod"}` (`env_name` shows which environment the backend is running).
+2. <https://med-zen.onrender.com/api/healthceck> returns `{"status":"ok","status_code":200,"env_name":"prod"}` (`env_name` shows which environment the backend is running, and `urls` lists every API endpoint).
 3. <https://med-zen.onrender.com/docs> shows the API docs.
 4. Log in and use the app. Calls go to `https://med-zen.onrender.com/api/v1/...`.
 

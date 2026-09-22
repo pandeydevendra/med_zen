@@ -50,5 +50,14 @@ def read_root():
     return {"message": "MedZen Doctor Booking Agent", "status_code": status.HTTP_200_OK}
 
 
+# The tse_ops UI (hospital onboarding) is the same single-page app, routed
+# client-side by main.jsx based on the URL path. Serve it the same index.html
+# so a direct visit or refresh at /tse_ops doesn't 404.
+@app.get("/tse_ops", include_in_schema=False)
+@app.get("/tse_ops/", include_in_schema=False)
+def read_tse_ops():
+    return read_root()
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
