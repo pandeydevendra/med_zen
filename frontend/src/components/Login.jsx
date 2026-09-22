@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../constants';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, title = 'MediZen Login', subtitle }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -41,7 +41,10 @@ const Login = ({ onLogin }) => {
   return (
     <div className="w-full h-screen flex items-center" style={{ justifyContent: 'center', backgroundColor: 'var(--secondary)' }}>
       <div className={`card ${error ? 'shake' : ''}`} style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--primary)' }}>MediZen Login</h2>
+        <h2 className={`text-2xl font-bold text-center ${subtitle ? 'mb-2' : 'mb-6'}`} style={{ color: 'var(--primary)' }}>{title}</h2>
+        {subtitle && (
+          <p className="text-sm text-muted mb-6" style={{ textAlign: 'center' }}>{subtitle}</p>
+        )}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

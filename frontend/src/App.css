@@ -472,3 +472,65 @@
 .agent-chat-input-row input {
   flex: 1;
 }
+
+/* tse_ops: hospital onboarding */
+.ops-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.ops-hospital-card {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ops-hospital-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+.ops-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--secondary);
+  color: var(--text-main);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.ops-hospital-card .flex.gap-2 {
+  margin-top: 0.4rem;
+}
+
+.ops-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ops-empty-icon {
+  font-size: 2.25rem;
+}
