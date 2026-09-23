@@ -6,13 +6,15 @@ handlers are listed in url.py.
 import os
 from typing import Optional
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from auth import verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
-from hospitals import FACILITY_TYPES, add_hospital, list_hospitals
 from menu import get_menu_items
+from middleware import require_role
+from ops_onboarding import create_hospital_with_admin, list_facilities
+from user_auth import login_hospital_user, login_ops_user
 
 
 def healthceck(request: Request):
@@ -58,6 +60,71 @@ def login(payload: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid username or password.")
     print(f"[login] success username={payload.username}")
     return LoginResponse(success=True, role="receptionist")
+
+
+# ---------------------------------------------------------------------------
+# JWT login — hospital staff (ADMIN/RECEPTIONIST/DOCTOR) and platform ops
+# staff (OPS_ADMIN) share the `users` table but log in through different
+# endpoints; see user_auth.py for the guards that keep the two separate.
+# ---------------------------------------------------------------------------
+class PhoneLoginRequest(BaseModel):
+    phone: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    token: str
+    role: str
+    is_super: bool
+    user_name: str
+    hospital_name: str
+
+
+def hospital_login(payload: PhoneLoginRequest):
+    return TokenResponse(**login_hospital_user(payload.phone, payload.password))
+
+
+def ops_login(payload: PhoneLoginRequest):
+    return TokenResponse(**login_ops_user(payload.phone, payload.password))
+
+
+# ---------------------------------------------------------------------------
+# Ops hospital onboarding — an authenticated OPS_ADMIN (any is_super value)
+# creates a new tenant plus its first ADMIN user in one transaction. DB-backed
+# (see ops_onboarding.py); distinct from the in-memory tse_ops demo below.
+# ---------------------------------------------------------------------------
+class CreateHospitalRequest(BaseModel):
+    hospital_name: str
+    org_type: str
+    state_name: Optional[str] = None
+    city: Optional[str] = None
+    admin_name: str
+    admin_phone: str
+    admin_password: str
+
+
+class CreateHospitalResponse(BaseModel):
+    hospital_uid: str
+    hospital_name: str
+    org_type: str
+    admin_user_uid: str
+    admin_name: str
+    admin_phone: str
+
+
+def create_hospital(payload: CreateHospitalRequest, ops_user: dict = Depends(require_role("OPS_ADMIN"))):
+    print(f"[ops/hospitals] {payload.org_type}={payload.hospital_name!r} onboarded_by sub={ops_user['sub']}")
+    result = create_hospital_with_admin(
+        hospital_name=payload.hospital_name,
+        org_type=payload.org_type,
+        state_name=payload.state_name,
+        city=payload.city,
+        admin_name=payload.admin_name,
+        admin_phone=payload.admin_phone,
+        admin_password=payload.admin_password,
+        onboarded_by=int(ops_user["sub"]),
+    )
+    return CreateHospitalResponse(**result)
 
 
 # ---------------------------------------------------------------------------
@@ -115,8 +182,15 @@ def reset_agent(payload: SessionRequest):
 # ---------------------------------------------------------------------------
 # tse_ops — internal onboarding of new hospitals. Reuses the same demo login
 # as the rest of the app (POST /api/v1/auth/login); there's no separate
-# tse_ops credential. Hospitals live in memory only — see hospitals.py.
+# tse_ops credential, so this endpoint carries no bearer token — unlike
+# POST /api/v1/ops/hospitals above, it's gated only by the tse_ops UI's own
+# login screen, not by the API itself. DB-backed via ops_onboarding.py.
 # ---------------------------------------------------------------------------
+FACILITY_TYPES = ["Hospital", "Clinic", "Individual Doctor"]
+_DISPLAY_TO_ORG_TYPE = {"Hospital": "HOSPITAL", "Clinic": "CLINIC", "Individual Doctor": "INDIVIDUAL"}
+_ORG_TYPE_TO_DISPLAY = {v: k for k, v in _DISPLAY_TO_ORG_TYPE.items()}
+
+
 class OnboardHospitalRequest(BaseModel):
     hospital_name: str
     address: Optional[str] = None
@@ -126,37 +200,43 @@ class OnboardHospitalRequest(BaseModel):
 
 
 class HospitalSummary(BaseModel):
-    id: int
+    id: str
     hospital_name: str
     address: Optional[str] = None
     admin_username: str
     facility_type: str
 
 
-def _to_summary(hospital: dict) -> HospitalSummary:
-    return HospitalSummary(
-        id=hospital["id"],
-        hospital_name=hospital["name"],
-        address=hospital["address"],
-        admin_username=hospital["admin_username"],
-        facility_type=hospital["facility_type"],
-    )
-
-
 def onboard_hospital(payload: OnboardHospitalRequest):
     print(f"[tse_ops] onboarding {payload.facility_type}={payload.hospital_name!r} admin={payload.admin_username!r}")
-    hospital = add_hospital(
-        name=payload.hospital_name,
+    result = create_hospital_with_admin(
+        org_type=_DISPLAY_TO_ORG_TYPE.get(payload.facility_type, "HOSPITAL"),
+        hospital_name=payload.hospital_name,
         address=payload.address,
-        admin_username=payload.admin_username,
+        admin_name=payload.admin_username,
+        admin_phone=payload.admin_username,
         admin_password=payload.admin_password,
+    )
+    return HospitalSummary(
+        id=result["hospital_uid"],
+        hospital_name=result["hospital_name"],
+        address=result["address"],
+        admin_username=result["admin_phone"],
         facility_type=payload.facility_type,
     )
-    return _to_summary(hospital)
 
 
 def tse_ops_hospitals():
     return {
-        "hospitals": [_to_summary(h) for h in list_hospitals()],
+        "hospitals": [
+            HospitalSummary(
+                id=f["hospital_uid"],
+                hospital_name=f["hospital_name"],
+                address=f["address"],
+                admin_username=f["admin_phone"] or "",
+                facility_type=_ORG_TYPE_TO_DISPLAY.get(f["org_type"], f["org_type"]),
+            )
+            for f in list_facilities()
+        ],
         "facility_types": FACILITY_TYPES,
     }

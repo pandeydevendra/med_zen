@@ -1,0 +1,283 @@
+<title>MedZen ER Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f1;
+    --surface: #ffffff;
+    --surface-alt: #eceee4;
+    --border: #cbd0c1;
+    --text: #1f2419;
+    --muted: #676d5c;
+    --accent: #16594c;
+    --accent-strong: #0e3e34;
+    --line: #949c86;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10131a;
+      --surface: #171c24;
+      --surface-alt: #1c222c;
+      --border: #2d3442;
+      --text: #e6e8de;
+      --muted: #9aa08d;
+      --accent: #57d9b3;
+      --accent-strong: #86eccb;
+      --line: #5e6779;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10131a;
+    --surface: #171c24;
+    --surface-alt: #1c222c;
+    --border: #2d3442;
+    --text: #e6e8de;
+    --muted: #9aa08d;
+    --accent: #57d9b3;
+    --accent-strong: #86eccb;
+    --line: #5e6779;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    padding: 28px 16px 48px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  .byline { color: var(--muted); font-size: 0.95rem; margin: 0 0 20px; }
+  .byline code {
+    font-family: "IBM Plex Mono", monospace;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.85em;
+  }
+  figure { margin: 0; }
+  .diagram-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+  svg.er { display: block; width: 100%; min-width: 760px; height: auto; }
+  figcaption {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    max-width: 70ch;
+  }
+  .entity-name { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; }
+  .attr { font-family: "IBM Plex Mono", monospace; }
+  .tag { font-family: "IBM Plex Sans", sans-serif; font-weight: 600; letter-spacing: 0.02em; }
+  .rel-label { font-family: "IBM Plex Mono", monospace; }
+</style>
+
+<div class="wrap">
+  <h1>MedZen Schema — ER Diagram v1</h1>
+  <p class="byline">Generated from <code>docs/mysql_scrpt.sql</code>. Six tables; <code>hospitals</code> and <code>users</code> form the tenant pair everything else hangs off of.</p>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg class="er" viewBox="0 0 1060 1000" role="img" aria-label="Entity-relationship diagram of the MedZen schema: hospitals and users at the top reference each other (onboarded_by / hospital_id), and both feed departments, doctors, slot_groups and appointments below via labeled one-to-many foreign keys.">
+        <defs>
+          <marker id="many" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+            <path d="M0,0 L9,5 L0,10" fill="none" stroke="currentColor" stroke-width="1.6" />
+          </marker>
+        </defs>
+
+        <!-- ===================== connectors (drawn first, under boxes) ===================== -->
+        <g fill="none" stroke="var(--line)" stroke-width="1.4" style="color:var(--line)">
+          <path d="M650,196 L650,246" marker-end="url(#many)" />
+          <path d="M780,289 L850,289 L850,163 L780,163" marker-end="url(#many)" />
+          <path d="M520,73 L260,73 L260,498" marker-end="url(#many)" />
+          <path d="M780,91 L920,91 L920,577 L780,577" marker-end="url(#many)" />
+          <path d="M650,430 L650,480" marker-end="url(#many)" />
+          <path d="M380,541 L450,541 L450,559 L520,559" marker-end="url(#many)" />
+          <path d="M650,628 L650,678" marker-end="url(#many)" />
+          <path d="M780,109 L980,109 L980,775 L780,775" marker-end="url(#many)" />
+          <path d="M650,844 L650,894" marker-end="url(#many)" />
+          <path d="M780,523 L950,523 L950,973 L780,973" marker-end="url(#many)" />
+          <path d="M520,127 L80,127 L80,955 L520,955" marker-end="url(#many)" />
+          <path d="M520,289 L40,289 L40,1063 L520,1063" marker-end="url(#many)" />
+        </g>
+
+        <!-- one-side markers -->
+        <g fill="var(--accent-strong)">
+          <circle cx="650" cy="196" r="3.6" />
+          <circle cx="780" cy="289" r="3.6" />
+          <circle cx="520" cy="73" r="3.6" />
+          <circle cx="780" cy="91" r="3.6" />
+          <circle cx="650" cy="430" r="3.6" />
+          <circle cx="380" cy="541" r="3.6" />
+          <circle cx="650" cy="628" r="3.6" />
+          <circle cx="780" cy="109" r="3.6" />
+          <circle cx="650" cy="844" r="3.6" />
+          <circle cx="780" cy="523" r="3.6" />
+          <circle cx="520" cy="127" r="3.6" />
+          <circle cx="520" cy="289" r="3.6" />
+        </g>
+
+        <!-- relationship labels -->
+        <g class="rel-label" font-size="10.5" fill="var(--muted)">
+          <rect x="638" y="215" width="76" height="14" fill="var(--bg)" />
+          <text x="641" y="225">hospital_id</text>
+
+          <rect x="788" y="222" width="86" height="14" fill="var(--bg)" />
+          <text x="791" y="232">onboarded_by</text>
+
+          <rect x="222" y="282" width="70" height="14" fill="var(--bg)" />
+          <text x="225" y="292">hospital_id</text>
+
+          <rect x="882" y="330" width="70" height="14" fill="var(--bg)" />
+          <text x="885" y="340">hospital_id</text>
+
+          <rect x="620" y="450" width="56" height="14" fill="var(--bg)" />
+          <text x="623" y="460">user_id</text>
+
+          <rect x="388" y="548" width="90" height="14" fill="var(--bg)" />
+          <text x="391" y="558">dept_id (null)</text>
+
+          <rect x="620" y="648" width="62" height="14" fill="var(--bg)" />
+          <text x="623" y="658">doctor_id</text>
+
+          <rect x="942" y="438" width="70" height="14" fill="var(--bg)" />
+          <text x="945" y="448">hospital_id</text>
+
+          <rect x="614" y="864" width="86" height="14" fill="var(--bg)" />
+          <text x="617" y="874">slot_group_id</text>
+
+          <rect x="912" y="744" width="62" height="14" fill="var(--bg)" />
+          <text x="915" y="754">doctor_id</text>
+
+          <rect x="42" y="536" width="70" height="14" fill="var(--bg)" />
+          <text x="45" y="546">hospital_id</text>
+
+          <rect x="2" y="672" width="66" height="14" fill="var(--bg)" />
+          <text x="5" y="682">created_by</text>
+        </g>
+
+        <!-- ===================== entities ===================== -->
+
+        <!-- hospitals -->
+        <g transform="translate(520,30)">
+          <rect width="260" height="166" rx="7" fill="var(--surface)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="260" y2="30" stroke="var(--border)" />
+          <text x="130" y="20" text-anchor="middle" class="entity-name" font-size="15">hospitals</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="248" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">hospital_uid</text><text x="248" y="61" text-anchor="end" class="tag" fill="var(--muted)">UK</text>
+            <text x="12" y="79">hospital_name</text>
+            <text x="12" y="97" font-size="10.5" fill="var(--muted)">state_name · city · address</text>
+            <text x="12" y="115">org_type</text>
+            <text x="12" y="133">onboarded_by</text><text x="248" y="133" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="151" font-size="10.5" fill="var(--muted)">is_active · timestamps</text>
+          </g>
+        </g>
+
+        <!-- users -->
+        <g transform="translate(520,246)">
+          <rect width="260" height="184" rx="7" fill="var(--surface)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="260" y2="30" stroke="var(--border)" />
+          <text x="130" y="20" text-anchor="middle" class="entity-name" font-size="15">users</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="248" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">user_uid</text><text x="248" y="61" text-anchor="end" class="tag" fill="var(--muted)">UK</text>
+            <text x="12" y="79">hospital_id</text><text x="248" y="79" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="97">user_name</text>
+            <text x="12" y="115">phone</text><text x="248" y="115" text-anchor="end" class="tag" fill="var(--muted)">UK</text>
+            <text x="12" y="133">access_role</text>
+            <text x="12" y="151">is_super</text>
+            <text x="12" y="169" font-size="10.5" fill="var(--muted)">is_active · timestamps</text>
+          </g>
+        </g>
+
+        <!-- departments -->
+        <g transform="translate(140,498)">
+          <rect width="240" height="112" rx="7" fill="var(--surface-alt)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="240" y2="30" stroke="var(--border)" />
+          <text x="120" y="20" text-anchor="middle" class="entity-name" font-size="15">departments</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="228" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">hospital_id</text><text x="228" y="61" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="79">name</text>
+            <text x="12" y="97" font-size="10.5" fill="var(--muted)">timestamps</text>
+          </g>
+        </g>
+
+        <!-- doctors -->
+        <g transform="translate(520,480)">
+          <rect width="260" height="148" rx="7" fill="var(--surface)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="260" y2="30" stroke="var(--border)" />
+          <text x="130" y="20" text-anchor="middle" class="entity-name" font-size="15">doctors</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="248" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">user_id</text><text x="248" y="61" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="79">dept_id</text><text x="248" y="79" text-anchor="end" class="tag" fill="var(--muted)">FK·null</text>
+            <text x="12" y="97">hospital_id</text><text x="248" y="97" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="115">is_active</text>
+            <text x="12" y="133" font-size="10.5" fill="var(--muted)">timestamps</text>
+          </g>
+        </g>
+
+        <!-- slot_groups -->
+        <g transform="translate(520,678)">
+          <rect width="260" height="166" rx="7" fill="var(--surface)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="260" y2="30" stroke="var(--border)" />
+          <text x="130" y="20" text-anchor="middle" class="entity-name" font-size="15">slot_groups</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="248" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">doctor_id</text><text x="248" y="61" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="79">hospital_id</text><text x="248" y="79" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="97">slot_date</text>
+            <text x="12" y="115" font-size="10.5" fill="var(--muted)">start_time · end_time</text>
+            <text x="12" y="133" font-size="10.5" fill="var(--muted)">max_patients · booked_count</text>
+            <text x="12" y="151" font-size="10.5" fill="var(--muted)">timestamps</text>
+          </g>
+        </g>
+
+        <!-- appointments -->
+        <g transform="translate(520,894)">
+          <rect width="260" height="202" rx="7" fill="var(--surface)" stroke="var(--border)" />
+          <line x1="0" y1="30" x2="260" y2="30" stroke="var(--border)" />
+          <text x="130" y="20" text-anchor="middle" class="entity-name" font-size="15">appointments</text>
+          <g class="attr" font-size="11.5" fill="var(--text)">
+            <text x="12" y="43">id</text><text x="248" y="43" text-anchor="end" class="tag" fill="var(--accent-strong)">PK</text>
+            <text x="12" y="61">hospital_id</text><text x="248" y="61" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="79">doctor_id</text><text x="248" y="79" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="97">slot_group_id</text><text x="248" y="97" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="115">patient_name</text>
+            <text x="12" y="133">token_number</text>
+            <text x="12" y="151">status</text>
+            <text x="12" y="169">created_by</text><text x="248" y="169" text-anchor="end" class="tag" fill="var(--muted)">FK</text>
+            <text x="12" y="187" font-size="10.5" fill="var(--muted)">timestamps</text>
+          </g>
+        </g>
+
+        <!-- legend -->
+        <g transform="translate(140,660)">
+          <rect width="240" height="106" rx="7" fill="var(--surface-alt)" stroke="var(--border)" />
+          <text x="14" y="22" class="entity-name" font-size="12.5">Legend</text>
+          <circle cx="20" cy="42" r="3.6" fill="var(--accent-strong)" />
+          <text x="32" y="46" font-size="11" fill="var(--text)">"one" end of the relationship</text>
+          <path d="M14,62 L23,66 L14,70" fill="none" stroke="var(--line)" stroke-width="1.6" />
+          <text x="32" y="70" font-size="11" fill="var(--text)">"many" end (the FK side)</text>
+          <text x="14" y="92" font-size="10.5" fill="var(--muted)">PK primary key · UK unique · FK foreign key</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Every arrow is a foreign key, drawn from the "one" side (a filled dot) to the "many" side (an open arrowhead) and labeled with the FK column. <code>hospitals</code> and <code>users</code> reference each other — <code>users.hospital_id</code> down, <code>hospitals.onboarded_by</code> back up — and both feed <code>departments</code>, <code>doctors</code>, <code>slot_groups</code> and <code>appointments</code>.</figcaption>
+  </figure>
+</div>
