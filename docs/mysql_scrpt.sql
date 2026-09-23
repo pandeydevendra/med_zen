@@ -5,6 +5,9 @@
 -- (see hld-account-types.md for the reasoning behind this pattern).
 -- =====================================================================
 
+CREATE DATABASE IF NOT EXISTS med_zen;
+USE med_zen;
+
 -- 1. HOSPITALS — tenant table (real hospitals/clinics/solo doctors AND
 --    the one reserved PLATFORM row that ops accounts hang off of)
 CREATE TABLE hospitals (
