@@ -1,0 +1,370 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex 0fda84d..cd8338c 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -4,8 +4,10 @@[m [m__pycache__/[m
+ *.egg-info/[m
+ venv/[m
+ .venv/[m
+[31m-env/[m
+[32m+[m[32m/env/[m
+ *.env[m
+[32m+[m[32m# Frontend env files hold only public URLs (no secrets) and are committed.[m
+[32m+[m[32m!frontend/env/*.env[m
+ [m
+ # Node[m
+ node_modules/[m
+[1mdiff --git a/README.md b/README.md[m
+[1mindex ab10f51..585fda4 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -6,7 +6,7 @@[m [mMediZen is a hospital management platform with a FastAPI backend and a React (Vi[m
+ [m
+ - [backend/](backend/) — FastAPI backend. See [backend/README.md](backend/README.md) for setup.[m
+ - [frontend/](frontend/) — React + Vite frontend.[m
+[31m-- [docs/](docs/) — Project documentation.[m
+[32m+[m[32m- [docs/](docs/) — Project documentation, including the [deployment guide](docs/DEPLOYMENT.md) (local and Render).[m
+ [m
+ ## Getting Started[m
+ [m
+[36m@@ -26,6 +26,23 @@[m [mAPI available at [http://127.0.0.1:8000](http://127.0.0.1:8000), interactive doc[m
+ [m
+ ```bash[m
+ cd frontend[m
+[31m-npm install[m
+[32m+[m[32mnpm install        # first time only[m
+ npm run dev[m
+ ```[m
+[32m+[m
+[32m+[m[32mOpen [http://localhost:5173](http://localhost:5173). The frontend calls the backend at `http://127.0.0.1:8000/api/v1/...`, so run the backend in a separate terminal at the same time.[m
+[32m+[m
+[32m+[m[32m### Editor setup (VS Code)[m
+[32m+[m
+[32m+[m[32mInstall the **Python** extension (`ms-python.python`, includes Pylance) for Python code navigation, and select the project's interpreter (bottom-right of the window). Import paths for `backend/` are already set in [.vscode/settings.json](.vscode/settings.json).[m
+[32m+[m
+[32m+[m[32m## Running with an environment[m
+[32m+[m
+[32m+[m[32mEach app has an `env/` folder with `local_dev.env` and `prod.env` (git-ignored — add your own keys).[m
+[32m+[m
+[32m+[m[32m| | Local dev | Prod |[m
+[32m+[m[32m|---|---|---|[m
+[32m+[m[32m| **FastAPI** ([details](backend/README.md#environments)) | `uvicorn main:app --reload` | `ENV_NAME=prod uvicorn main:app --host 0.0.0.0 --port 8000` (PowerShell: `$env:ENV_NAME="prod"; uvicorn ...`) |[m
+[32m+[m[32m| **React** ([details](frontend/README.md#environments)) | `npm run dev` | `npm run dev:prod` to run, `npm run build` to build |[m
+[32m+[m
+[32m+[m[32mAPI endpoints are listed in [backend/url.py](backend/url.py) under `/api/v1`; handlers are in [backend/views.py](backend/views.py).[m
+[1mdiff --git a/backend/README.md b/backend/README.md[m
+[1mindex c667a70..1594565 100644[m
+[1m--- a/backend/README.md[m
+[1m+++ b/backend/README.md[m
+[36m@@ -21,3 +21,95 @@[m [mThis is the FastAPI backend for MedZen.[m
+    ```[m
+ [m
+ The API will be available at [http://127.0.0.1:8000](http://127.0.0.1:8000). You can also view the interactive API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).[m
+[32m+[m
+[32m+[m[32m## Environments[m
+[32m+[m
+[32m+[m[32mConfig lives in [env/](env/) — one file per environment (`local_dev.env`, `prod.env`). Set `ENV_NAME` to choose which one is loaded; it defaults to `local_dev`. These files are git-ignored, so put your `OPENAI_API_KEY` in each.[m
+[32m+[m
+[32m+[m[32m| Variable | Purpose |[m
+[32m+[m[32m|---|---|[m
+[32m+[m[32m| `ENV_NAME` | Environment name (`local_dev` or `prod`) |[m
+[32m+[m[32m| `OPENAI_API_KEY` | OpenAI key for the doctor agent |[m
+[32m+[m[32m| `JWT_SECRET` | Signing secret for hospital/ops login JWTs (see Auth below) |[m
+[32m+[m[32m| `DB_HOST` | MySQL host |[m
+[32m+[m[32m| `DB_USER` | MySQL user |[m
+[32m+[m[32m| `DB_PASSWORD` | MySQL password |[m
+[32m+[m[32m| `DB_NAME` | MySQL database name |[m
+[32m+[m
+[32m+[m[32mRun locally (loads `env/local_dev.env`):[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32muvicorn main:app --reload[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mRun with the prod env:[m
+[32m+[m
+[32m+[m[32m```bash[m
+[32m+[m[32m# bash / Git Bash / macOS / Linux[m
+[32m+[m[32mENV_NAME=prod uvicorn main:app --host 0.0.0.0 --port 8000[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m```powershell[m
+[32m+[m[32m# PowerShell[m
+[32m+[m[32m$env:ENV_NAME = "prod"; uvicorn main:app --host 0.0.0.0 --port 8000[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mOn a host like Render, set `ENV_NAME=prod` as an environment variable and use `uvicorn main:app --host 0.0.0.0 --port $PORT` as the start command.[m
+[32m+[m
+[32m+[m[32m## API[m
+[32m+[m
+[32m+[m[32mThe endpoint list is in [url.py](url.py) (URL → handler), the handlers are in [views.py](views.py), and everything is served under `/api`. Versioned endpoints live under `/api/v1` (e.g. `POST /api/v1/auth/login`, `GET /api/v1/doctors`); to introduce a breaking change, add a router with a `/v2` prefix and keep `/api/v1` running. The health check is unversioned at `GET /api/healthceck`, and `/` returns a welcome message.[m
+[32m+[m
+[32m+[m[32m## Auth (JWT — hospital + ops)[m
+[32m+[m
+[32m+[m[32mReal accounts (as opposed to the single demo login above) live in the `users` table — see [docs/mysql_scrpt.sql](../docs/mysql_scrpt.sql) for the schema. Hospital staff (`ADMIN`/`RECEPTIONIST`/`DOCTOR`) belong to a real tenant row in `hospitals`; platform ops staff (`OPS_ADMIN`) belong to the one reserved `hospitals` row where `org_type = 'PLATFORM'`, with `is_super` distinguishing Field Ops from Super Ops.[m
+[32m+[m
+[32m+[m[32mTwo login endpoints, same table, different guard — an identifier/password pair only produces a token from the endpoint that matches its account's role. `identifier` accepts either the account's `phone` or its `email` (see `UserDAL`'s phone-OR-email lookup) — the caller doesn't need to know which one a given account was onboarded with:[m
+[32m+[m
+[32m+[m[32m- `POST /api/v1/auth/hospital/login` — body `{ "identifier", "password" }`. Rejects `OPS_ADMIN` accounts and inactive users/hospitals.[m
+[32m+[m[32m- `POST /api/v1/auth/ops/login` — body `{ "identifier", "password" }`. Only accepts active `OPS_ADMIN` accounts under the `PLATFORM` tenant.[m
+[32m+[m
+[32m+[m[32mBoth return `401 Invalid credentials` on any failure (wrong identifier, wrong password, wrong endpoint for that role, inactive account) without saying which check failed. On success, both return `{ "token", "role", "is_super" }`; the JWT itself (see [jwt_utils.py](jwt_utils.py)) carries `sub`/`hospital_id` (internal numeric ids, for DB joins — `sub` is a string per RFC 7519, cast it back to `int` before using it in a query) and `user_uid`/`hospital_uid` (external UUIDs — always use these in URLs and response bodies, never the numeric ids), plus `role`, `is_super`, and `tenant_type`. Tokens expire after 8 hours.[m
+[32m+[m
+[32m+[m[32mLogic lives in [user_auth.py](user_auth.py) (the two login functions and their raw parameterized SQL), [jwt_utils.py](jwt_utils.py) (sign/verify), [db.py](db.py) (the `mysql-connector-python` pool — no ORM), and [middleware.py](middleware.py), which exposes three FastAPI dependencies for other routes to use:[m
+[32m+[m
+[32m+[m[32m- `authenticate_jwt` — verifies the bearer token, 401 if missing/invalid/expired.[m
+[32m+[m[32m- `require_role(*roles)` — 403 if the token's role isn't in the allowed list.[m
+[32m+[m[32m- `require_own_tenant` — for a route with a `{hospital_uid}` path param, 403 unless it matches the token's `hospital_uid`, except for `OPS_ADMIN` accounts with `is_super = true`, who can act across tenants.[m
+[32m+[m
+[32m+[m[32m### Ops hospital onboarding[m
+[32m+[m
+[32m+[m[32m`POST /api/v1/ops/hospitals` — behind `require_role("OPS_ADMIN")` (any `is_super` value). Body:[m
+[32m+[m
+[32m+[m[32m```json[m
+[32m+[m[32m{[m
+[32m+[m[32m  "hospital_name": "Patna General Hospital",[m
+[32m+[m[32m  "org_type": "HOSPITAL",[m
+[32m+[m[32m  "state_name": "Bihar",[m
+[32m+[m[32m  "city": "Patna",[m
+[32m+[m[32m  "email": "contact@patnagh.example",[m
+[32m+[m[32m  "contact_number": "9800000001",[m
+[32m+[m[32m  "admin_name": "Admin Name",[m
+[32m+[m[32m  "admin_phone": "9800000000",[m
+[32m+[m[32m  "admin_email": "admin@patnagh.example",[m
+[32m+[m[32m  "admin_password": "..."[m
+[32m+[m[32m}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32m`org_type` must be `HOSPITAL`, `CLINIC`, or `INDIVIDUAL` (`PLATFORM` is reserved for the ops tenant — 400 otherwise). `email`/`contact_number` are optional facility-level contact details, distinct from `admin_phone`/`admin_email` (the admin user's own login identifiers — either works with the login endpoints above). Logic in [ops_onboarding.py](ops_onboarding.py) inserts the `hospitals` row and its first `ADMIN` user in a single transaction (rolled back together on failure), stamping `onboarded_by` with the calling ops user's id and generating fresh UUIDv7 `hospital_uid`/`user_uid` values (see [uid.py](uid.py)). Returns 409 if `admin_phone` is already registered. Response never includes internal numeric ids:[m
+[32m+[m
+[32m+[m[32m```json[m
+[32m+[m[32m{[m
+[32m+[m[32m  "hospital_uid": "...",[m
+[32m+[m[32m  "hospital_name": "Patna General Hospital",[m
+[32m+[m[32m  "email": "contact@patnagh.example",[m
+[32m+[m[32m  "contact_number": "9800000001",[m
+[32m+[m[32m  "org_type": "HOSPITAL",[m
+[32m+[m[32m  "admin_user_uid": "...",[m
+[32m+[m[32m  "admin_name": "Admin Name",[m
+[32m+[m[32m  "admin_phone": "9800000000",[m
+[32m+[m[32m  "admin_email": "admin@patnagh.example"[m
+[32m+[m[32m}[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mThis is distinct from the demo onboarding at `POST /api/v1/tse-ops/hospitals`, which still backs the current tse_ops UI and carries no bearer token — but, like the endpoint above, it's DB-backed via [ops_onboarding.py](ops_onboarding.py), not in-memory.[m
+[1mdiff --git a/backend/auth.py b/backend/auth.py[m
+[1mindex ccfe878..5625ca5 100644[m
+[1m--- a/backend/auth.py[m
+[1m+++ b/backend/auth.py[m
+[36m@@ -10,3 +10,14 @@[m [mDEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "dev@med_patnagmc@123#")[m
+ [m
+ def verify_credentials(username: str, password: str) -> bool:[m
+     return username == DEMO_USERNAME and password == DEMO_PASSWORD[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef login_failure_reason(username: str, password: str) -> str | None:[m
+[32m+[m[32m    """Diagnostic detail for [login] logs — deliberately never includes the[m
+[32m+[m[32m    password itself, only whether it was the username or the password that[m
+[32m+[m[32m    didn't match."""[m
+[32m+[m[32m    if username != DEMO_USERNAME:[m
+[32m+[m[32m        return "unknown_username"[m
+[32m+[m[32m    if password != DEMO_PASSWORD:[m
+[32m+[m[32m        return "wrong_password"[m
+[32m+[m[32m    return None[m
+[1mdiff --git a/backend/data_access_layer/__init__.py b/backend/data_access_layer/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..706eca3[m
+[1m--- /dev/null[m
+[1m+++ b/backend/data_access_layer/__init__.py[m
+[36m@@ -0,0 +1,8 @@[m
+[32m+[m[32m"""[m
+[32m+[m[32mData access layer: every raw parameterized SQL query in the backend lives[m
+[32m+[m[32mhere, grouped by table into <table>_dal.py modules exposing a DAL-suffixed[m
+[32m+[m[32mclass of static methods. See docs/mysql_scrpt.sql for the schema. Callers[m
+[32m+[m[32m(user_auth.py, ops_onboarding.py) own transaction boundaries and business[m
+[32m+[m[32mlogic; DAL methods that participate in a multi-statement transaction take an[m
+[32m+[m[32mopen cursor instead of managing their own connection.[m
+[32m+[m[32m"""[m
+[1mdiff --git a/backend/data_access_layer/hospital_dal.py b/backend/data_access_layer/hospital_dal.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..147ff31[m
+[1m--- /dev/null[m
+[1m+++ b/backend/data_access_layer/hospital_dal.py[m
+[36m@@ -0,0 +1,53 @@[m
+[32m+[m[32m"""Raw SQL for the `hospitals` table (see docs/mysql_scrpt.sql)."""[m
+[32m+[m
+[32m+[m[32mfrom db import get_connection[m
+[32m+[m
+[32m+[m[32m_INSERT_HOSPITAL_SQL = """[m
+[32m+[m[32m    INSERT INTO hospitals (hospital_uid, hospital_name, state_name, city, address, email, contact_number, org_type, onboarded_by, is_active)[m
+[32m+[m[32m    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32m_LIST_FACILITIES_SQL = """[m
+[32m+[m[32m    SELECT h.hospital_uid, h.hospital_name, h.address, h.email, h.contact_number, h.org_type,[m
+[32m+[m[32m           u.user_name AS admin_name, u.phone AS admin_phone, u.email AS admin_email[m
+[32m+[m[32m    FROM hospitals h[m
+[32m+[m[32m    LEFT JOIN users u ON u.id = ([m
+[32m+[m[32m        SELECT MIN(id) FROM users WHERE users.hospital_id = h.id AND users.access_role = 'ADMIN'[m
+[32m+[m[32m    )[m
+[32m+[m[32m    WHERE h.org_type != 'PLATFORM'[m
+[32m+[m[32m    ORDER BY h.id[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass HospitalDAL:[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def insert_hospital([m
+[32m+[m[32m        cursor,[m
+[32m+[m[32m        *,[m
+[32m+[m[32m        hospital_uid: str,[m
+[32m+[m[32m        hospital_name: str,[m
+[32m+[m[32m        state_name: str | None,[m
+[32m+[m[32m        city: str | None,[m
+[32m+[m[32m        address: str | None,[m
+[32m+[m[32m        email: str | None,[m
+[32m+[m[32m        contact_number: str | None,[m
+[32m+[m[32m        org_type: str,[m
+[32m+[m[32m        onboarded_by: int | None,[m
+[32m+[m[32m    ) -> int:[m
+[32m+[m[32m        cursor.execute([m
+[32m+[m[32m            _INSERT_HOSPITAL_SQL,[m
+[32m+[m[32m            (hospital_uid, hospital_name, state_name, city, address, email, contact_number, org_type, onboarded_by),[m
+[32m+[m[32m        )[m
+[32m+[m[32m        return cursor.lastrowid[m
+[32m+[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def list_facilities() -> list[dict]:[m
+[32m+[m[32m        """Real tenants (excludes the reserved PLATFORM row), each paired[m
+[32m+[m[32m        with its earliest ADMIN user."""[m
+[32m+[m[32m        conn = get_connection()[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            with conn.cursor(dictionary=True) as cur:[m
+[32m+[m[32m                cur.execute(_LIST_FACILITIES_SQL)[m
+[32m+[m[32m                return cur.fetchall()[m
+[32m+[m[32m        finally:[m
+[32m+[m[32m            conn.close()[m
+[1mdiff --git a/backend/data_access_layer/user_dal.py b/backend/data_access_layer/user_dal.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..22e214c[m
+[1m--- /dev/null[m
+[1m+++ b/backend/data_access_layer/user_dal.py[m
+[36m@@ -0,0 +1,67 @@[m
+[32m+[m[32m"""Raw SQL for the `users` table (see docs/mysql_scrpt.sql)."""[m
+[32m+[m
+[32m+[m[32mfrom db import get_connection[m
+[32m+[m
+[32m+[m[32m# identifier matches either phone or email — callers pass the same value[m
+[32m+[m[32m# twice, once for each side of the OR.[m
+[32m+[m[32m_HOSPITAL_LOGIN_SQL = """[m
+[32m+[m[32m    SELECT u.id, u.user_uid, u.user_name, u.hospital_id, u.password_hash, u.access_role AS role, u.is_super, u.is_active,[m
+[32m+[m[32m           h.hospital_uid, h.hospital_name, h.org_type AS tenant_type, h.is_active AS hospital_active[m
+[32m+[m[32m    FROM users u[m
+[32m+[m[32m    JOIN hospitals h ON h.id = u.hospital_id[m
+[32m+[m[32m    WHERE (u.phone = %s OR u.email = %s)[m
+[32m+[m[32m      AND h.org_type != 'PLATFORM'[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32m_OPS_LOGIN_SQL = """[m
+[32m+[m[32m    SELECT u.id, u.user_uid, u.user_name, u.hospital_id, u.password_hash, u.access_role AS role, u.is_super, u.is_active,[m
+[32m+[m[32m           h.hospital_uid, h.hospital_name, h.org_type AS tenant_type[m
+[32m+[m[32m    FROM users u[m
+[32m+[m[32m    JOIN hospitals h ON h.id = u.hospital_id[m
+[32m+[m[32m    WHERE (u.phone = %s OR u.email = %s)[m
+[32m+[m[32m      AND h.org_type = 'PLATFORM'[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32m_INSERT_USER_SQL = """[m
+[32m+[m[32m    INSERT INTO users (user_uid, hospital_id, user_name, phone, email, password_hash, access_role, is_active)[m
+[32m+[m[32m    VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass UserDAL:[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def find_hospital_login(identifier: str) -> dict | None:[m
+[32m+[m[32m        conn = get_connection()[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            with conn.cursor(dictionary=True) as cur:[m
+[32m+[m[32m                cur.execute(_HOSPITAL_LOGIN_SQL, (identifier, identifier))[m
+[32m+[m[32m                return cur.fetchone()[m
+[32m+[m[32m        finally:[m
+[32m+[m[32m            conn.close()[m
+[32m+[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def find_ops_login(identifier: str) -> dict | None:[m
+[32m+[m[32m        conn = get_connection()[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            with conn.cursor(dictionary=True) as cur:[m
+[32m+[m[32m                cur.execute(_OPS_LOGIN_SQL, (identifier, identifier))[m
+[32m+[m[32m                return cur.fetchone()[m
+[32m+[m[32m        finally:[m
+[32m+[m[32m            conn.close()[m
+[32m+[m
+[32m+[m[32m    @staticmethod[m
+[32m+[m[32m    def insert_user([m
+[32m+[m[32m        cursor,[m
+[32m+[m[32m        *,[m
+[32m+[m[32m        user_uid: str,[m
+[32m+[m[32m        hospital_id: int,[m
+[32m+[m[32m        user_name: str,[m
+[32m+[m[32m        phone: str,[m
+[32m+[m[32m        email: str | None = None,[m
+[32m+[m[32m        password_hash: str,[m
+[32m+[m[32m        access_role: str,[m
+[32m+[m[32m    ) -> None:[m
+[32m+[m[32m        cursor.execute([m
+[32m+[m[32m            _INSERT_USER_SQL,[m
+[32m+[m[32m            (user_uid, hospital_id, user_name, phone, email, password_hash, access_role),[m
+[32m+[m[32m        )[m
+[1mdiff --git a/backend/db.py b/backend/db.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..25b49cf[m
+[1m--- /dev/null[m
+[1m+++ b/backend/db.py[m
+[36m@@ -0,0 +1,35 @@[m
+[32m+[m[32m"""[m
+[32m+[m[32mRaw MySQL connection pool (mysql-connector-python). No ORM — every query in[m
+[32m+[m[32mthis codebase is written and executed by hand with parameterized SQL. See[m
+[32m+[m[32mdocs/mysql_scrpt.sql for the schema.[m
+[32m+[m
+[32m+[m[32mThe pool is created lazily on first use, not at import time, so the app can[m
+[32m+[m[32mstill start (and other routes that don't touch the DB still work) when the[m
+[32m+[m[32mDB env vars aren't set yet, same as OPENAI_API_KEY is only required once the[m
+[32m+[m[32mdoctor agent is actually invoked.[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32mimport os[m
+[32m+[m
+[32m+[m[32mimport mysql.connector[m
+[32m+[m[32mfrom mysql.connector import pooling[m
+[32m+[m
+[32m+[m[32m_pool: pooling.MySQLConnectionPool | None = None[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _get_pool() -> pooling.MySQLConnectionPool:[m
+[32m+[m[32m    global _pool[m
+[32m+[m[32m    if _pool is None:[m
+[32m+[m[32m        _pool = pooling.MySQLConnectionPool([m
+[32m+[m[32m            pool_name="medzen_pool",[m
+[32m+[m[32m            pool_size=5,[m
+[32m+[m[32m            host=os.environ["DB_HOST"],[m
+[32m+[m[32m            user=os.environ["DB_USER"],[m
+[32m+[m[32m            password=os.environ["DB_PASSWORD"],[m
+[32m+[m[32m            database=os.environ["DB_NAME"],[m
+[32m+[m[32m        )[m
+[32m+[m[32m    return _pool[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef get_connection() -> mysql.connector.MySQLConnection:[m
+[32m+[m[32m    return _get_pool().get_connection()[m
+[1mdiff --git a/backend/env/local_dev.env.example b/backend/env/local_dev.env.example[m
+[1mnew file mode 100644[m
+[1mindex 0000000..46dfabc[m
+[1m--- /dev/null[m
+[1m+++ b/backend/env/local_dev.env.example[m
+[36m@@ -0,0 +1,13 @@[m
+[32m+[m[32m# Local environment. Copy to local_dev.env and fill in real values.[m
+[32m+[m[32mENV_NAME=local_dev[m
+[32m+[m[32mOPENAI_API_KEY=your-openai-api-key[m
+[32m+
