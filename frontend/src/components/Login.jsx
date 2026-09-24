@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../constants';
 
-const Login = ({ onLogin, title = 'MediZen Login', subtitle }) => {
-  const [username, setUsername] = useState('');
+// endpoint/identifierField pick which backend login this form talks to: the
+// old fixed demo login (username, /v1/auth/login) or a real JWT login backed
+// by the `users` table (phone, /v1/auth/hospital/login or /v1/auth/ops/login).
+// Both response shapes carry a `role`; a JWT response also carries a `token`.
+const Login = ({
+  onLogin,
+  title = 'MediZen Login',
+  subtitle,
+  endpoint = '/v1/auth/login',
+  identifierLabel = 'Username',
+  identifierField = 'username',
+}) => {
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,17 +29,18 @@ const Login = ({ onLogin, title = 'MediZen Login', subtitle }) => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`${API_URL}/v1/auth/login`, {
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ [identifierField]: identifier, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || 'Invalid username or password.');
+        throw new Error(body.detail || 'Invalid credentials.');
       }
       const data = await res.json();
-      onLogin(data.role);
+      if (data.token) localStorage.setItem('medzen_token', data.token);
+      onLogin({ role: data.role.toLowerCase(), hospitalName: data.hospital_name, userName: data.user_name });
     } catch (err) {
       setErrorMsg(err.message || 'Login failed. Is the backend running?');
       setError(true);
@@ -48,17 +60,17 @@ const Login = ({ onLogin, title = 'MediZen Login', subtitle }) => {
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-muted">Username</label>
+            <label className="text-sm font-semibold text-muted">{identifierLabel}</label>
             <input
               ref={userRef}
               type="text"
-              value={username}
+              value={identifier}
               onChange={e => {
-                setUsername(e.target.value);
+                setIdentifier(e.target.value);
                 if (error) setError(false);
               }}
               className={error ? 'border-danger' : ''}
-              placeholder="Enter username"
+              placeholder={`Enter ${identifierLabel.toLowerCase()}`}
             />
           </div>
           <div className="flex flex-col gap-2">

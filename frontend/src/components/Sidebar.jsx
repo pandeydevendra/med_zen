@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../constants';
 
-const Sidebar = ({ page = 'dashboard', onNavigate, role = 'receptionist', collapsed = false }) => {
+const Sidebar = ({ page = 'dashboard', onNavigate, role = 'receptionist', collapsed = false, hospitalName }) => {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const Sidebar = ({ page = 'dashboard', onNavigate, role = 'receptionist', collap
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        🏥 MediZen
+        🏥 {hospitalName || 'MediZen'}
       </div>
       <nav className="sidebar-nav">
         {items.map(item => (

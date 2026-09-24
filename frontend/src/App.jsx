@@ -10,19 +10,28 @@ import DoctorAgentPage from './components/DoctorAgentPage';
 import HelpDocs from './components/HelpDocs';
 
 function App() {
-  const [auth, setAuth] = useState({ isAuthenticated: false, role: null });
+  const [auth, setAuth] = useState({ isAuthenticated: false, role: null, hospitalName: null, userName: null });
   const [page, setPage] = useState('dashboard');
 
   if (!auth.isAuthenticated) {
-    return <Login onLogin={(role) => setAuth({ isAuthenticated: true, role })} />;
+    return (
+      <Login
+        endpoint="/v1/auth/hospital/login"
+        identifierLabel="Phone"
+        identifierField="phone"
+        onLogin={({ role, hospitalName, userName }) => setAuth({ isAuthenticated: true, role, hospitalName, userName })}
+      />
+    );
   }
 
   return (
     <BookingProvider>
       <Layout
-        onLogout={() => setAuth({ isAuthenticated: false, role: null })}
+        onLogout={() => setAuth({ isAuthenticated: false, role: null, hospitalName: null, userName: null })}
         role={auth.role}
         onRoleChange={(role) => setAuth(prev => ({ ...prev, role }))}
+        hospitalName={auth.hospitalName}
+        userName={auth.userName}
         page={page}
         onNavigate={setPage}
       >

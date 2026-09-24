@@ -1,0 +1,65 @@
+[
+  {
+    "hospital_name": "Patna General Hospital",
+    "address": "Boring Road, Patna",
+    "admin_username": "patna_general_admin",
+    "admin_password": "Demo@1234",
+    "facility_type": "Hospital"
+  },
+  {
+    "hospital_name": "Kaimur District Hospital",
+    "address": "Bhabua, Kaimur",
+    "admin_username": "kaimur_district_admin",
+    "admin_password": "Demo@1234",
+    "facility_type": "Hospital"
+  },
+  {
+    "hospital_name": "Sunrise Family Clinic",
+    "address": "Kankarbagh, Patna",
+    "admin_username": "sunrise_clinic_admin",
+    "admin_password": "Demo@1234",
+    "facility_type": "Clinic"
+  },
+  {
+    "hospital_name": "Wellness Care Clinic",
+    "address": "Danapur, Patna",
+    "admin_username": "wellness_clinic_admin",
+    "admin_password": "Demo@1234",
+    "facility_type": "Clinic"
+  },
+  {
+    "hospital_name": "Apex Diagnostics Clinic",
+    "address": "Fraser Road, Patna",
+    "admin_username": "apex_clinic_admin",
+    "admin_password": "Demo@1234",
+    "facility_type": "Clinic"
+  },
+  {
+    "hospital_name": "Dr. A. Sharma — General Physician",
+    "address": "Ashok Rajpath, Patna",
+    "admin_username": "dr_asharma",
+    "admin_password": "Demo@1234",
+    "facility_type": "Individual Doctor"
+  },
+  {
+    "hospital_name": "Dr. N. Verma — Pediatrician",
+    "address": "Rajendra Nagar, Patna",
+    "admin_username": "dr_nverma",
+    "admin_password": "Demo@1234",
+    "facility_type": "Individual Doctor"
+  },
+  {
+    "hospital_name": "Dr. S. Gupta — Dermatologist",
+    "address": "Boring Road, Patna",
+    "admin_username": "dr_sgupta",
+    "admin_password": "Demo@1234",
+    "facility_type": "Individual Doctor"
+  },
+  {
+    "hospital_name": "Dr. P. Singh — Orthopedic",
+    "address": "Kankarbagh, Patna",
+    "admin_username": "dr_psingh",
+    "admin_password": "Demo@1234",
+    "facility_type": "Individual Doctor"
+  }
+]
