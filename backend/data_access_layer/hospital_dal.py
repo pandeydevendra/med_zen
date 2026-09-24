@@ -3,13 +3,13 @@
 from db import get_connection
 
 _INSERT_HOSPITAL_SQL = """
-    INSERT INTO hospitals (hospital_uid, hospital_name, state_name, city, address, org_type, onboarded_by, is_active)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
+    INSERT INTO hospitals (hospital_uid, hospital_name, state_name, city, address, email, contact_number, org_type, onboarded_by, is_active)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
 """
 
 _LIST_FACILITIES_SQL = """
-    SELECT h.hospital_uid, h.hospital_name, h.address, h.org_type,
-           u.user_name AS admin_name, u.phone AS admin_phone
+    SELECT h.hospital_uid, h.hospital_name, h.address, h.email, h.contact_number, h.org_type,
+           u.user_name AS admin_name, u.phone AS admin_phone, u.email AS admin_email
     FROM hospitals h
     LEFT JOIN users u ON u.id = (
         SELECT MIN(id) FROM users WHERE users.hospital_id = h.id AND users.access_role = 'ADMIN'
@@ -29,12 +29,14 @@ class HospitalDAL:
         state_name: str | None,
         city: str | None,
         address: str | None,
+        email: str | None,
+        contact_number: str | None,
         org_type: str,
         onboarded_by: int | None,
     ) -> int:
         cursor.execute(
             _INSERT_HOSPITAL_SQL,
-            (hospital_uid, hospital_name, state_name, city, address, org_type, onboarded_by),
+            (hospital_uid, hospital_name, state_name, city, address, email, contact_number, org_type, onboarded_by),
         )
         return cursor.lastrowid
 

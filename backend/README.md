@@ -64,12 +64,12 @@ The endpoint list is in [url.py](url.py) (URL → handler), the handlers are in 
 
 Real accounts (as opposed to the single demo login above) live in the `users` table — see [docs/mysql_scrpt.sql](../docs/mysql_scrpt.sql) for the schema. Hospital staff (`ADMIN`/`RECEPTIONIST`/`DOCTOR`) belong to a real tenant row in `hospitals`; platform ops staff (`OPS_ADMIN`) belong to the one reserved `hospitals` row where `org_type = 'PLATFORM'`, with `is_super` distinguishing Field Ops from Super Ops.
 
-Two login endpoints, same table, different guard — a phone/password pair only produces a token from the endpoint that matches its account's role:
+Two login endpoints, same table, different guard — an identifier/password pair only produces a token from the endpoint that matches its account's role. `identifier` accepts either the account's `phone` or its `email` (see `UserDAL`'s phone-OR-email lookup) — the caller doesn't need to know which one a given account was onboarded with:
 
-- `POST /api/v1/auth/hospital/login` — body `{ "phone", "password" }`. Rejects `OPS_ADMIN` accounts and inactive users/hospitals.
-- `POST /api/v1/auth/ops/login` — body `{ "phone", "password" }`. Only accepts active `OPS_ADMIN` accounts under the `PLATFORM` tenant.
+- `POST /api/v1/auth/hospital/login` — body `{ "identifier", "password" }`. Rejects `OPS_ADMIN` accounts and inactive users/hospitals.
+- `POST /api/v1/auth/ops/login` — body `{ "identifier", "password" }`. Only accepts active `OPS_ADMIN` accounts under the `PLATFORM` tenant.
 
-Both return `401 Invalid credentials` on any failure (wrong phone, wrong password, wrong endpoint for that role, inactive account) without saying which check failed. On success, both return `{ "token", "role", "is_super" }`; the JWT itself (see [jwt_utils.py](jwt_utils.py)) carries `sub`/`hospital_id` (internal numeric ids, for DB joins — `sub` is a string per RFC 7519, cast it back to `int` before using it in a query) and `user_uid`/`hospital_uid` (external UUIDs — always use these in URLs and response bodies, never the numeric ids), plus `role`, `is_super`, and `tenant_type`. Tokens expire after 8 hours.
+Both return `401 Invalid credentials` on any failure (wrong identifier, wrong password, wrong endpoint for that role, inactive account) without saying which check failed. On success, both return `{ "token", "role", "is_super" }`; the JWT itself (see [jwt_utils.py](jwt_utils.py)) carries `sub`/`hospital_id` (internal numeric ids, for DB joins — `sub` is a string per RFC 7519, cast it back to `int` before using it in a query) and `user_uid`/`hospital_uid` (external UUIDs — always use these in URLs and response bodies, never the numeric ids), plus `role`, `is_super`, and `tenant_type`. Tokens expire after 8 hours.
 
 Logic lives in [user_auth.py](user_auth.py) (the two login functions and their raw parameterized SQL), [jwt_utils.py](jwt_utils.py) (sign/verify), [db.py](db.py) (the `mysql-connector-python` pool — no ORM), and [middleware.py](middleware.py), which exposes three FastAPI dependencies for other routes to use:
 
@@ -87,23 +87,29 @@ Logic lives in [user_auth.py](user_auth.py) (the two login functions and their r
   "org_type": "HOSPITAL",
   "state_name": "Bihar",
   "city": "Patna",
+  "email": "contact@patnagh.example",
+  "contact_number": "9800000001",
   "admin_name": "Admin Name",
   "admin_phone": "9800000000",
+  "admin_email": "admin@patnagh.example",
   "admin_password": "..."
 }
 ```
 
-`org_type` must be `HOSPITAL`, `CLINIC`, or `INDIVIDUAL` (`PLATFORM` is reserved for the ops tenant — 400 otherwise). Logic in [ops_onboarding.py](ops_onboarding.py) inserts the `hospitals` row and its first `ADMIN` user in a single transaction (rolled back together on failure), stamping `onboarded_by` with the calling ops user's id and generating fresh UUIDv7 `hospital_uid`/`user_uid` values (see [uid.py](uid.py)). Returns 409 if `admin_phone` is already registered. Response never includes internal numeric ids:
+`org_type` must be `HOSPITAL`, `CLINIC`, or `INDIVIDUAL` (`PLATFORM` is reserved for the ops tenant — 400 otherwise). `email`/`contact_number` are optional facility-level contact details, distinct from `admin_phone`/`admin_email` (the admin user's own login identifiers — either works with the login endpoints above). Logic in [ops_onboarding.py](ops_onboarding.py) inserts the `hospitals` row and its first `ADMIN` user in a single transaction (rolled back together on failure), stamping `onboarded_by` with the calling ops user's id and generating fresh UUIDv7 `hospital_uid`/`user_uid` values (see [uid.py](uid.py)). Returns 409 if `admin_phone` is already registered. Response never includes internal numeric ids:
 
 ```json
 {
   "hospital_uid": "...",
   "hospital_name": "Patna General Hospital",
+  "email": "contact@patnagh.example",
+  "contact_number": "9800000001",
   "org_type": "HOSPITAL",
   "admin_user_uid": "...",
   "admin_name": "Admin Name",
-  "admin_phone": "9800000000"
+  "admin_phone": "9800000000",
+  "admin_email": "admin@patnagh.example"
 }
 ```
 
-This is distinct from the in-memory demo onboarding at `POST /api/v1/tse-ops/hospitals` (see [hospitals.py](hospitals.py)), which still backs the current tse_ops UI and resets on every restart.
+This is distinct from the demo onboarding at `POST /api/v1/tse-ops/hospitals`, which still backs the current tse_ops UI and carries no bearer token — but, like the endpoint above, it's DB-backed via [ops_onboarding.py](ops_onboarding.py), not in-memory.

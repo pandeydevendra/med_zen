@@ -17,8 +17,8 @@ function App() {
     return (
       <Login
         endpoint="/v1/auth/hospital/login"
-        identifierLabel="Phone"
-        identifierField="phone"
+        identifierLabel="Phone or Email"
+        identifierField="identifier"
         onLogin={({ role, hospitalName, userName }) => setAuth({ isAuthenticated: true, role, hospitalName, userName })}
       />
     );

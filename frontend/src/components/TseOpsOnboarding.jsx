@@ -1,7 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { API_URL } from '../constants';
 
-const EMPTY_FORM = { hospital_name: '', address: '', admin_username: '', admin_password: '', facility_type: 'Hospital' };
+const EMPTY_FORM = {
+  hospital_name: '',
+  address: '',
+  email: '',
+  contact_number: '',
+  admin_username: '',
+  admin_email: '',
+  admin_password: '',
+  facility_type: 'Hospital',
+};
 const DEFAULT_TYPES = ['Hospital', 'Clinic', 'Individual Doctor'];
 const TYPE_ICON = { Hospital: '🏥', Clinic: '🏪', 'Individual Doctor': '🩺' };
 const TYPE_BORDER = { Hospital: 'var(--primary)', Clinic: 'var(--success)', 'Individual Doctor': '#8b5cf6' };
@@ -144,6 +153,26 @@ const TseOpsOnboarding = ({ onLogout }) => {
                     placeholder="Optional"
                   />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-muted">Email</label>
+                  <input
+                    type="email"
+                    className="w-full"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-muted">Contact number</label>
+                  <input
+                    type="tel"
+                    className="w-full"
+                    value={form.contact_number}
+                    onChange={(e) => setForm({ ...form, contact_number: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </div>
                 <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
                 <p className="text-sm font-semibold text-muted" style={{ margin: 0 }}>First admin user</p>
                 <div className="flex flex-col gap-2">
@@ -154,6 +183,16 @@ const TseOpsOnboarding = ({ onLogout }) => {
                     value={form.admin_username}
                     onChange={(e) => setForm({ ...form, admin_username: e.target.value })}
                     required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-muted">Admin email</label>
+                  <input
+                    type="email"
+                    className="w-full"
+                    value={form.admin_email}
+                    onChange={(e) => setForm({ ...form, admin_email: e.target.value })}
+                    placeholder="Optional — lets the admin log in with email too"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -217,6 +256,9 @@ const TseOpsOnboarding = ({ onLogout }) => {
                         <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
                           <span className="ops-badge">{TYPE_ICON[h.facility_type]} {h.facility_type}</span>
                           <span className="ops-badge">👤 {h.admin_username}</span>
+                          {h.admin_email && <span className="ops-badge">📧 {h.admin_email}</span>}
+                          {h.email && <span className="ops-badge">✉️ {h.email}</span>}
+                          {h.contact_number && <span className="ops-badge">📞 {h.contact_number}</span>}
                         </div>
                       </div>
                     </div>

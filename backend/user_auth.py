@@ -8,8 +8,12 @@ login_hospital_user() and login_ops_user() are two different guards over the
 same table, not two different tables — an OPS_ADMIN account must never get a
 token from the hospital endpoint and a hospital-staff account must never get
 one from the ops endpoint. Both fail the same way regardless of *why* (wrong
-phone, wrong password, wrong endpoint for that account's role, inactive
+identifier, wrong password, wrong endpoint for that account's role, inactive
 account): a generic 401, so a client can't tell which check failed.
+
+Both accept either the user's phone or their email as the login identifier
+(see UserDAL's phone-OR-email lookup) — a client doesn't need to know which
+one a given account was onboarded with.
 """
 
 import bcrypt
@@ -40,9 +44,9 @@ def _issue_token(row: dict) -> dict:
     }
 
 
-def login_hospital_user(phone: str, password: str) -> dict:
-    print(f"[auth/hospital/login] attempt phone={phone}")
-    row = UserDAL.find_hospital_login(phone)
+def login_hospital_user(identifier: str, password: str) -> dict:
+    print(f"[auth/hospital/login] attempt identifier={identifier}")
+    row = UserDAL.find_hospital_login(identifier)
     if (
         row is None
         or row["role"] == "OPS_ADMIN"
@@ -50,22 +54,22 @@ def login_hospital_user(phone: str, password: str) -> dict:
         or not row["hospital_active"]
         or not bcrypt.checkpw(password.encode(), row["password_hash"].encode())
     ):
-        print(f"[auth/hospital/login] rejected phone={phone}")
+        print(f"[auth/hospital/login] rejected identifier={identifier}")
         raise _INVALID_CREDENTIALS
-    print(f"[auth/hospital/login] success phone={phone}")
+    print(f"[auth/hospital/login] success identifier={identifier}")
     return _issue_token(row)
 
 
-def login_ops_user(phone: str, password: str) -> dict:
-    print(f"[auth/ops/login] attempt phone={phone}")
-    row = UserDAL.find_ops_login(phone)
+def login_ops_user(identifier: str, password: str) -> dict:
+    print(f"[auth/ops/login] attempt identifier={identifier}")
+    row = UserDAL.find_ops_login(identifier)
     if (
         row is None
         or row["role"] != "OPS_ADMIN"
         or not row["is_active"]
         or not bcrypt.checkpw(password.encode(), row["password_hash"].encode())
     ):
-        print(f"[auth/ops/login] rejected phone={phone}")
+        print(f"[auth/ops/login] rejected identifier={identifier}")
         raise _INVALID_CREDENTIALS
-    print(f"[auth/ops/login] success phone={phone}")
+    print(f"[auth/ops/login] success identifier={identifier}")
     return _issue_token(row)

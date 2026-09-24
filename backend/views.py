@@ -9,7 +9,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
-from auth import verify_credentials
+from auth import login_failure_reason, verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
 from menu import get_menu_items
 from middleware import require_role
@@ -56,9 +56,10 @@ class LoginResponse(BaseModel):
 def login(payload: LoginRequest):
     print(f"[login] attempt username={payload.username}")
     if not verify_credentials(payload.username, payload.password):
-        print(f"[login] failed username={payload.username}")
+        reason = login_failure_reason(payload.username, payload.password)
+        print(f"[login] failed username={payload.username} reason={reason}")
         raise HTTPException(status_code=401, detail="Invalid username or password.")
-    print(f"[login] success username={payload.username}")
+    print(f"[login] success username={payload.username} role=receptionist")
     return LoginResponse(success=True, role="receptionist")
 
 
@@ -66,9 +67,10 @@ def login(payload: LoginRequest):
 # JWT login — hospital staff (ADMIN/RECEPTIONIST/DOCTOR) and platform ops
 # staff (OPS_ADMIN) share the `users` table but log in through different
 # endpoints; see user_auth.py for the guards that keep the two separate.
+# `identifier` accepts either the account's phone or its email.
 # ---------------------------------------------------------------------------
-class PhoneLoginRequest(BaseModel):
-    phone: str
+class IdentifierLoginRequest(BaseModel):
+    identifier: str
     password: str
 
 
@@ -80,12 +82,12 @@ class TokenResponse(BaseModel):
     hospital_name: str
 
 
-def hospital_login(payload: PhoneLoginRequest):
-    return TokenResponse(**login_hospital_user(payload.phone, payload.password))
+def hospital_login(payload: IdentifierLoginRequest):
+    return TokenResponse(**login_hospital_user(payload.identifier, payload.password))
 
 
-def ops_login(payload: PhoneLoginRequest):
-    return TokenResponse(**login_ops_user(payload.phone, payload.password))
+def ops_login(payload: IdentifierLoginRequest):
+    return TokenResponse(**login_ops_user(payload.identifier, payload.password))
 
 
 # ---------------------------------------------------------------------------
@@ -98,18 +100,24 @@ class CreateHospitalRequest(BaseModel):
     org_type: str
     state_name: Optional[str] = None
     city: Optional[str] = None
+    email: Optional[str] = None
+    contact_number: Optional[str] = None
     admin_name: str
     admin_phone: str
+    admin_email: Optional[str] = None
     admin_password: str
 
 
 class CreateHospitalResponse(BaseModel):
     hospital_uid: str
     hospital_name: str
+    email: Optional[str] = None
+    contact_number: Optional[str] = None
     org_type: str
     admin_user_uid: str
     admin_name: str
     admin_phone: str
+    admin_email: Optional[str] = None
 
 
 def create_hospital(payload: CreateHospitalRequest, ops_user: dict = Depends(require_role("OPS_ADMIN"))):
@@ -119,8 +127,11 @@ def create_hospital(payload: CreateHospitalRequest, ops_user: dict = Depends(req
         org_type=payload.org_type,
         state_name=payload.state_name,
         city=payload.city,
+        email=payload.email,
+        contact_number=payload.contact_number,
         admin_name=payload.admin_name,
         admin_phone=payload.admin_phone,
+        admin_email=payload.admin_email,
         admin_password=payload.admin_password,
         onboarded_by=int(ops_user["sub"]),
     )
@@ -194,7 +205,10 @@ _ORG_TYPE_TO_DISPLAY = {v: k for k, v in _DISPLAY_TO_ORG_TYPE.items()}
 class OnboardHospitalRequest(BaseModel):
     hospital_name: str
     address: Optional[str] = None
+    email: Optional[str] = None
+    contact_number: Optional[str] = None
     admin_username: str
+    admin_email: Optional[str] = None
     admin_password: str
     facility_type: str = "Hospital"
 
@@ -203,7 +217,10 @@ class HospitalSummary(BaseModel):
     id: str
     hospital_name: str
     address: Optional[str] = None
+    email: Optional[str] = None
+    contact_number: Optional[str] = None
     admin_username: str
+    admin_email: Optional[str] = None
     facility_type: str
 
 
@@ -213,15 +230,21 @@ def onboard_hospital(payload: OnboardHospitalRequest):
         org_type=_DISPLAY_TO_ORG_TYPE.get(payload.facility_type, "HOSPITAL"),
         hospital_name=payload.hospital_name,
         address=payload.address,
+        email=payload.email,
+        contact_number=payload.contact_number,
         admin_name=payload.admin_username,
         admin_phone=payload.admin_username,
+        admin_email=payload.admin_email,
         admin_password=payload.admin_password,
     )
     return HospitalSummary(
         id=result["hospital_uid"],
         hospital_name=result["hospital_name"],
         address=result["address"],
+        email=result["email"],
+        contact_number=result["contact_number"],
         admin_username=result["admin_phone"],
+        admin_email=result["admin_email"],
         facility_type=payload.facility_type,
     )
 
@@ -233,7 +256,10 @@ def tse_ops_hospitals():
                 id=f["hospital_uid"],
                 hospital_name=f["hospital_name"],
                 address=f["address"],
+                email=f["email"],
+                contact_number=f["contact_number"],
                 admin_username=f["admin_phone"] or "",
+                admin_email=f["admin_email"],
                 facility_type=_ORG_TYPE_TO_DISPLAY.get(f["org_type"], f["org_type"]),
             )
             for f in list_facilities()
