@@ -32,6 +32,7 @@ Config lives in [env/](env/) — one file per environment (`local_dev.env`, `pro
 | `OPENAI_API_KEY` | OpenAI key for the doctor agent |
 | `JWT_SECRET` | Signing secret for hospital/ops login JWTs (see Auth below) |
 | `DB_HOST` | MySQL host |
+| `DB_PORT` | MySQL port (defaults to `3306` if unset — managed providers like Aiven/PlanetScale assign a random non-3306 port, check their connection info) |
 | `DB_USER` | MySQL user |
 | `DB_PASSWORD` | MySQL password |
 | `DB_NAME` | MySQL database name |

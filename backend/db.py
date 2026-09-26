@@ -24,6 +24,11 @@ def _get_pool() -> pooling.MySQLConnectionPool:
             pool_name="medzen_pool",
             pool_size=5,
             host=os.environ["DB_HOST"],
+            # Managed MySQL providers (Aiven, PlanetScale, etc.) assign a
+            # random per-service port, not 3306 — DB_PORT is optional so
+            # local/self-hosted MySQL on the standard port still works
+            # without setting it.
+            port=int(os.environ.get("DB_PORT", 3306)),
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASSWORD"],
             database=os.environ["DB_NAME"],
