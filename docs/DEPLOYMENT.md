@@ -91,6 +91,7 @@ Environment variables (Render dashboard → Environment). The `VITE_*` values ar
 | `DEMO_PASSWORD` | a strong password |
 | `JWT_SECRET` | a long random secret, different from your local one |
 | `DB_HOST` | your production MySQL host |
+| `DB_PORT` | your production MySQL port — **check this explicitly**; managed providers (Aiven, PlanetScale, ...) assign a random non-`3306` port per service, shown on their connection-info page. Defaults to `3306` if unset, which is wrong for most of them. |
 | `DB_USER` | your production MySQL user |
 | `DB_PASSWORD` | your production MySQL password |
 | `DB_NAME` | `med_zen` |
@@ -100,7 +101,7 @@ Environment variables (Render dashboard → Environment). The `VITE_*` values ar
 
 Set `DEMO_USERNAME` and `DEMO_PASSWORD` for anything reachable from the internet. Without them the demo defaults from the source code apply.
 
-Render does not provide MySQL itself (only Postgres) — `DB_HOST`/`DB_USER`/`DB_PASSWORD` must point at a MySQL instance reachable from the internet (e.g. PlanetScale, Railway, Aiven, AWS RDS). Run [docs/mysql_scrpt.sql](mysql_scrpt.sql) against it once before first use — see [Database setup](#database-setup) below. Without `DB_HOST` set, any DB-backed request (login, ops onboarding) crashes with `KeyError: 'DB_HOST'` — [db.py](../backend/db.py) reads these vars lazily, so the app still boots and non-DB routes still work, but the first DB touch fails hard.
+Render does not provide MySQL itself (only Postgres) — `DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASSWORD` must point at a MySQL instance reachable from the internet (e.g. PlanetScale, Railway, Aiven, AWS RDS). Run [docs/mysql_scrpt.sql](mysql_scrpt.sql) against it once before first use — see [Database setup](#database-setup) below. Without `DB_HOST` set, any DB-backed request (login, ops onboarding) crashes with `KeyError: 'DB_HOST'` — [db.py](../backend/db.py) reads these vars lazily, so the app still boots and non-DB routes still work, but the first DB touch fails hard. With the wrong `DB_PORT`, it instead hangs and times out (`mysql.connector.errors.ConnectionTimeoutError`) rather than failing fast, since nothing is listening on the wrong port to reject the connection quickly.
 
 `frontend/env/prod.env` is committed, so the Render build gets the `VITE_*` values from it even without dashboard entries (a variable set in the dashboard still wins). `backend/env/prod.env` is not in git, so the backend uses the dashboard variables. `npm run build` uses the `prod` mode.
 
@@ -141,7 +142,7 @@ Both environments need a real MySQL database before any DB-backed endpoint (logi
 | `OPENAI_API_KEY` | — | your key | your key |
 | `DEMO_USERNAME` / `DEMO_PASSWORD` | — | your choice | your choice |
 | `JWT_SECRET` | — | your choice | a long random secret |
-| `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | — | your local MySQL | your production MySQL |
+| `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | — | your local MySQL (`DB_PORT` defaults to `3306`) | your production MySQL — check the provider's actual port |
 
 Vite only exposes variables that start with `VITE_` to the browser. The backend does not use the API and site URLs, so they only exist on the frontend side.
 
@@ -159,3 +160,4 @@ Vite only exposes variables that start with `VITE_` to the browser. The backend 
 | Login returns 401 (hospital/ops JWT login) | Wrong `identifier`/password, or the account/hospital is inactive — both endpoints return the same generic 401 regardless of which check failed (see [backend/README.md](../backend/README.md#auth-jwt--hospital--ops)). |
 | `KeyError: 'DB_HOST'` (or `DB_USER`/`DB_PASSWORD`/`DB_NAME`) crashing a DB-backed request | One of the `DB_*` variables isn't set for that environment — see [Database setup](#database-setup). `db.py` builds the connection pool lazily on first DB use, so the app still boots and non-DB routes still work; only the first DB-touching request crashes. |
 | `mysql.connector.errors.ProgrammingError: Unknown column '...' in 'field list'` | The database's schema is out of date relative to the code — re-run [docs/mysql_scrpt.sql](mysql_scrpt.sql) (or the relevant `ALTER TABLE` statements) against it. |
+| `mysql.connector.errors.ConnectionTimeoutError: Can't connect to MySQL server on 'host:3306'` (request hangs, then times out) | `DB_PORT` is wrong or unset — you are trying port `3306` on a host that is not actually listening there. Managed MySQL providers (Aiven, PlanetScale, ...) assign a random per-service port; find the real one on their connection-info page and set `DB_PORT` to it. A wrong port times out instead of failing fast, because there is nothing on that port to reject the connection. |
