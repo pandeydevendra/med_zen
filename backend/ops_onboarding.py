@@ -27,8 +27,11 @@ def create_hospital_with_admin(
     state_name: str | None = None,
     city: str | None = None,
     address: str | None = None,
+    email: str | None = None,
+    contact_number: str | None = None,
     admin_name: str,
     admin_phone: str,
+    admin_email: str | None = None,
     admin_password: str,
     onboarded_by: int | None = None,
 ) -> dict:
@@ -51,6 +54,8 @@ def create_hospital_with_admin(
             state_name=state_name,
             city=city,
             address=address,
+            email=email,
+            contact_number=contact_number,
             org_type=org_type,
             onboarded_by=onboarded_by,
         )
@@ -60,6 +65,7 @@ def create_hospital_with_admin(
             hospital_id=hospital_id,
             user_name=admin_name,
             phone=admin_phone,
+            email=admin_email,
             password_hash=password_hash,
             access_role="ADMIN",
         )
@@ -78,10 +84,13 @@ def create_hospital_with_admin(
         "hospital_uid": hospital_uid,
         "hospital_name": hospital_name,
         "address": address,
+        "email": email,
+        "contact_number": contact_number,
         "org_type": org_type,
         "admin_user_uid": admin_uid,
         "admin_name": admin_name,
         "admin_phone": admin_phone,
+        "admin_email": admin_email,
     }
 
 

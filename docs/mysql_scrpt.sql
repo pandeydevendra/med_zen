@@ -33,6 +33,13 @@ ALTER TABLE hospitals
 ALTER TABLE hospitals
   ADD COLUMN address VARCHAR(255) NULL AFTER city;
 
+-- 1c. Facility-level contact details, collected by the tse_ops onboarding
+--     UI alongside the address — distinct from the admin user's own login
+--     phone (users.phone).
+ALTER TABLE hospitals
+  ADD COLUMN email VARCHAR(255) NULL AFTER address,
+  ADD COLUMN contact_number VARCHAR(32) NULL AFTER email;
+
 -- 2. USERS — the one login table for everyone (ADMIN/RECEPTIONIST/DOCTOR
 --    for real tenants, OPS_ADMIN for staff under the PLATFORM tenant)
 CREATE TABLE users (
@@ -55,6 +62,11 @@ CREATE TABLE users (
 --     without leaking the internal auto-increment id.
 ALTER TABLE users
   ADD COLUMN user_uid VARCHAR(36) NOT NULL UNIQUE AFTER id;
+
+-- 2b. The user's own email — distinct from hospitals.email (the facility's
+--     general contact address) and from phone (the login identifier).
+ALTER TABLE users
+  ADD COLUMN email VARCHAR(255) NULL AFTER phone;
 
 -- 3. Close the circular reference: hospitals.onboarded_by -> users.id
 ALTER TABLE hospitals
