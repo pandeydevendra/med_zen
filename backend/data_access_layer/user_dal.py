@@ -22,6 +22,14 @@ _OPS_LOGIN_SQL = """
       AND h.org_type = 'PLATFORM'
 """
 
+# Deliberately excludes id and password_hash — this feeds an API response.
+_LIST_BY_HOSPITAL_SQL = """
+    SELECT u.user_uid, u.user_name, u.phone, u.email, u.access_role AS role, u.is_active, u.created_at
+    FROM users u
+    WHERE u.hospital_id = %s
+    ORDER BY FIELD(u.access_role, 'ADMIN', 'DOCTOR', 'RECEPTIONIST'), u.user_name
+"""
+
 _INSERT_USER_SQL = """
     INSERT INTO users (user_uid, hospital_id, user_name, phone, email, password_hash, access_role, is_active)
     VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
@@ -46,6 +54,16 @@ class UserDAL:
             with conn.cursor(dictionary=True) as cur:
                 cur.execute(_OPS_LOGIN_SQL, (identifier, identifier))
                 return cur.fetchone()
+        finally:
+            conn.close()
+
+    @staticmethod
+    def list_by_hospital(hospital_id: int) -> list[dict]:
+        conn = get_connection()
+        try:
+            with conn.cursor(dictionary=True) as cur:
+                cur.execute(_LIST_BY_HOSPITAL_SQL, (hospital_id,))
+                return cur.fetchall()
         finally:
             conn.close()
 

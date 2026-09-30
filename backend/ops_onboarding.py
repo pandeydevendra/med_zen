@@ -98,3 +98,19 @@ def list_facilities() -> list[dict]:
     """Real tenants (excludes the reserved PLATFORM row), each paired with
     its earliest ADMIN user, for the tse_ops directory listing."""
     return HospitalDAL.list_facilities()
+
+
+def list_facility_users(hospital_uid: str) -> dict:
+    """One facility plus every user under it (all roles, active or not).
+    404s for unknown uids and for the reserved PLATFORM tenant, so ops staff
+    accounts can't be listed through this."""
+    facility = HospitalDAL.find_facility(hospital_uid)
+    if facility is None:
+        raise HTTPException(status_code=404, detail="Facility not found")
+    return {
+        "hospital_uid": facility["hospital_uid"],
+        "hospital_name": facility["hospital_name"],
+        "org_type": facility["org_type"],
+        "is_active": bool(facility["is_active"]),
+        "users": UserDAL.list_by_hospital(facility["id"]),
+    }
