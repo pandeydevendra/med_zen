@@ -3,9 +3,10 @@ API endpoints, served under /api. Versioned endpoints are under /api/v1 — add
 a new router with a /v2 prefix when making a breaking change to the API.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 import views
+from middleware import require_own_tenant, require_role
 
 router = APIRouter(prefix="/api")
 router.add_api_route("/healthceck", views.healthceck, methods=["GET"])
@@ -19,6 +20,14 @@ v1.add_api_route(
 v1.add_api_route("/auth/ops/login", views.ops_login, methods=["POST"], response_model=views.TokenResponse)
 v1.add_api_route(
     "/ops/hospitals", views.create_hospital, methods=["POST"], response_model=views.CreateHospitalResponse
+)
+# Super OPS_ADMIN for any facility, or the facility's own ADMIN (not its doctors/receptionists).
+v1.add_api_route(
+    "/ops/hospitals/{hospital_uid}/users",
+    views.facility_users,
+    methods=["GET"],
+    response_model=views.FacilityUsersResponse,
+    dependencies=[Depends(require_own_tenant), Depends(require_role("ADMIN", "OPS_ADMIN"))],
 )
 v1.add_api_route("/doctors", views.list_doctors, methods=["GET"])
 v1.add_api_route("/doctors/filters", views.doctor_filters, methods=["GET"])

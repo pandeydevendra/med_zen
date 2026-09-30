@@ -18,6 +18,13 @@ _LIST_FACILITIES_SQL = """
     ORDER BY h.id
 """
 
+_FIND_FACILITY_SQL = """
+    SELECT h.id, h.hospital_uid, h.hospital_name, h.org_type, h.is_active
+    FROM hospitals h
+    WHERE h.hospital_uid = %s
+      AND h.org_type != 'PLATFORM'
+"""
+
 
 class HospitalDAL:
     @staticmethod
@@ -49,5 +56,16 @@ class HospitalDAL:
             with conn.cursor(dictionary=True) as cur:
                 cur.execute(_LIST_FACILITIES_SQL)
                 return cur.fetchall()
+        finally:
+            conn.close()
+
+    @staticmethod
+    def find_facility(hospital_uid: str) -> dict | None:
+        """A real tenant by its external uid; never matches the PLATFORM row."""
+        conn = get_connection()
+        try:
+            with conn.cursor(dictionary=True) as cur:
+                cur.execute(_FIND_FACILITY_SQL, (hospital_uid,))
+                return cur.fetchone()
         finally:
             conn.close()
