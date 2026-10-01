@@ -68,14 +68,28 @@ const ROLE_META = {
 };
 const roleMeta = (role) => ROLE_META[role] || { label: role, tone: 'slate' };
 
+// Non-login staff roles (the `staff` table's staff_role).
+const STAFF_ROLE_META = {
+  NURSE: { label: 'Nurse', plural: 'Nurses', tone: 'green' },
+  ADMIN_STAFF: { label: 'Admin staff', plural: 'Admin staff', tone: 'blue' },
+  RECEPTIONIST: { label: 'Receptionist', plural: 'Receptionists', tone: 'purple' },
+  TECHNICIAN: { label: 'Technician', plural: 'Technicians', tone: 'slate' },
+  PHARMACIST: { label: 'Pharmacist', plural: 'Pharmacists', tone: 'slate' },
+};
+const staffRoleMeta = (role) => STAFF_ROLE_META[role] || { label: 'Other', plural: 'Other', tone: 'slate' };
+const GENDER_LABEL = { MALE: 'Male', FEMALE: 'Female', OTHER: 'Other' };
+
 const formatDate = (value) =>
   new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+const countBy = (items, key) =>
+  items.reduce((c, item) => ({ ...c, [item[key]]: (c[item[key]] || 0) + 1 }), {});
+
 // tse_ops: onboard a facility (hospital, clinic, or an individual doctor's
-// practice) plus its first admin user, and view each facility's users.
-// Facilities are stored in MySQL via the backend (ops_onboarding.py). The list
-// is the main view; the onboarding form and the users view open in slide-over
-// panels.
+// practice) plus its first admin user, and view each facility's staff and
+// login accounts. Facilities are stored in MySQL via the backend
+// (ops_onboarding.py). The list is the main view; the onboarding form and the
+// facility details open in slide-over panels.
 const TseOpsOnboarding = ({ userName, onLogout }) => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [facilityTypes, setFacilityTypes] = useState(DEFAULT_TYPES);
@@ -90,12 +104,12 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
-  const [usersFacility, setUsersFacility] = useState(null);
-  const [usersData, setUsersData] = useState(null);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [usersError, setUsersError] = useState('');
+  const [detailFacility, setDetailFacility] = useState(null);
+  const [detailData, setDetailData] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
   const firstFieldRef = useRef(null);
-  const usersRequestRef = useRef(0);
+  const detailRequestRef = useRef(0);
 
   const loadHospitals = async () => {
     setListLoading(true);
@@ -130,50 +144,47 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
   }, [drawerOpen, submitting]);
 
   useEffect(() => {
-    if (!usersFacility) return undefined;
-    const onKey = (e) => e.key === 'Escape' && setUsersFacility(null);
+    if (!detailFacility) return undefined;
+    const onKey = (e) => e.key === 'Escape' && setDetailFacility(null);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [usersFacility]);
+  }, [detailFacility]);
 
-  // GET /v1/ops/hospitals/{uid}/users needs the ops JWT that Login stored.
-  // The request counter drops responses that arrive after another facility
-  // was opened.
-  const openUsers = async (facility) => {
-    const requestId = ++usersRequestRef.current;
-    setUsersFacility(facility);
-    setUsersData(null);
-    setUsersError('');
-    setUsersLoading(true);
+  // Loads GET /v1/ops/hospitals/{uid}/staff and /users together; both need the
+  // ops JWT that Login stored. The request counter drops responses that arrive
+  // after another facility was opened.
+  const openFacility = async (facility) => {
+    const requestId = ++detailRequestRef.current;
+    const isCurrent = () => requestId === detailRequestRef.current;
+    setDetailFacility(facility);
+    setDetailData(null);
+    setDetailError('');
+    setDetailLoading(true);
+    const headers = { Authorization: `Bearer ${localStorage.getItem('medzen_token') || ''}` };
+    const base = `${API_URL}/v1/ops/hospitals/${encodeURIComponent(facility.id)}`;
     try {
-      const res = await fetch(`${API_URL}/v1/ops/hospitals/${encodeURIComponent(facility.id)}/users`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('medzen_token') || ''}` },
-      });
-      if (res.status === 401) {
+      const responses = await Promise.all([fetch(`${base}/staff`, { headers }), fetch(`${base}/users`, { headers })]);
+      if (responses.some((res) => res.status === 401)) {
         onLogout();
         return;
       }
-      if (!res.ok) {
-        throw new Error(res.status === 403
-          ? "Your account doesn't have access to this facility's users."
-          : res.status === 404 ? 'This facility no longer exists.' : "Could not load this facility's users.");
+      const failed = responses.find((res) => !res.ok);
+      if (failed) {
+        throw new Error(failed.status === 403
+          ? "Your account doesn't have access to this facility."
+          : failed.status === 404 ? 'This facility no longer exists.' : "Could not load this facility's details.");
       }
-      const data = await res.json();
-      if (requestId === usersRequestRef.current) setUsersData(data);
+      const [staffData, usersData] = await Promise.all(responses.map((res) => res.json()));
+      if (isCurrent()) setDetailData({ ...usersData, staff: staffData.staff });
     } catch (err) {
-      if (requestId === usersRequestRef.current) setUsersError(err.message || "Could not load this facility's users.");
+      if (isCurrent()) setDetailError(err.message || "Could not load this facility's details.");
     } finally {
-      if (requestId === usersRequestRef.current) setUsersLoading(false);
+      if (isCurrent()) setDetailLoading(false);
     }
   };
 
-  const roleCounts = useMemo(() => {
-    const c = {};
-    (usersData?.users || []).forEach((u) => {
-      c[u.role] = (c[u.role] || 0) + 1;
-    });
-    return c;
-  }, [usersData]);
+  const staffCounts = useMemo(() => countBy(detailData?.staff || [], 'role'), [detailData]);
+  const userCounts = useMemo(() => countBy(detailData?.users || [], 'role'), [detailData]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -363,7 +374,12 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
                 <span role="columnheader"><span className="ops-sr-only">Actions</span></span>
               </div>
               {visibleHospitals.map((h) => (
-                <div key={h.id} role="row" className={`ops-row${h.id === highlightId ? ' is-new' : ''}`}>
+                <div
+                  key={h.id}
+                  role="row"
+                  className={`ops-row ops-row-clickable${h.id === highlightId ? ' is-new' : ''}`}
+                  onClick={() => openFacility(h)}
+                >
                   <div className="ops-cell-facility" role="cell">
                     <span className={`ops-avatar ops-tone-${metaFor(h.facility_type).tone}`}>{initials(h.hospital_name)}</span>
                     <div className="ops-cell-stack">
@@ -394,10 +410,13 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
                     <button
                       type="button"
                       className="ops-btn ops-btn-secondary ops-btn-sm"
-                      onClick={() => openUsers(h)}
-                      aria-label={`View users of ${h.hospital_name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openFacility(h);
+                      }}
+                      aria-label={`View staff and users of ${h.hospital_name}`}
                     >
-                      <Icon name="users" size={15} /> Users
+                      <Icon name="users" size={15} /> Staff &amp; users
                     </button>
                   </div>
                 </div>
@@ -408,92 +427,140 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
       </main>
 
       <div
-        className={`ops-scrim${drawerOpen || usersFacility ? ' is-open' : ''}`}
+        className={`ops-scrim${drawerOpen || detailFacility ? ' is-open' : ''}`}
         onClick={() => {
           closeDrawer();
-          setUsersFacility(null);
+          setDetailFacility(null);
         }}
         aria-hidden="true"
       />
 
       <aside
-        className={`ops-drawer${usersFacility ? ' is-open' : ''}`}
+        className={`ops-drawer${detailFacility ? ' is-open' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="ops-users-title"
-        aria-hidden={!usersFacility}
+        aria-labelledby="ops-detail-title"
+        aria-hidden={!detailFacility}
       >
-        {usersFacility && (
+        {detailFacility && (
           <div className="ops-drawer-form">
             <div className="ops-drawer-header">
               <div className="ops-cell-facility">
-                <span className={`ops-avatar ops-tone-${metaFor(usersFacility.facility_type).tone}`}>
-                  {initials(usersFacility.hospital_name)}
+                <span className={`ops-avatar ops-tone-${metaFor(detailFacility.facility_type).tone}`}>
+                  {initials(detailFacility.hospital_name)}
                 </span>
                 <div className="ops-cell-stack">
-                  <h2 id="ops-users-title" className="ops-drawer-title">{usersFacility.hospital_name}</h2>
+                  <h2 id="ops-detail-title" className="ops-drawer-title">{detailFacility.hospital_name}</h2>
                   <p className="ops-drawer-sub">
-                    {usersFacility.facility_type}
-                    {usersData && !usersData.is_active && ' · Inactive facility'}
+                    {detailFacility.facility_type}
+                    {detailData && !detailData.is_active && ' · Inactive facility'}
                   </p>
                 </div>
               </div>
-              <button type="button" className="ops-icon-btn" onClick={() => setUsersFacility(null)} aria-label="Close">
+              <button type="button" className="ops-icon-btn" onClick={() => setDetailFacility(null)} aria-label="Close">
                 <Icon name="close" />
               </button>
             </div>
 
             <div className="ops-drawer-body">
-              {usersLoading ? (
+              {detailLoading ? (
                 <div className="ops-user-list" aria-busy="true">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="ops-user-card ops-row-skeleton">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="ops-user-card">
                       <span className="ops-skel ops-skel-avatar" />
-                      <span className="ops-skel" style={{ width: '60%' }} />
+                      <span className="ops-skel" style={{ width: '60%', marginTop: '0.75rem' }} />
                     </div>
                   ))}
                 </div>
-              ) : usersError ? (
+              ) : detailError ? (
                 <div className="ops-state">
                   <span className="ops-state-icon ops-tone-red"><Icon name="alert" size={22} /></span>
-                  <p className="ops-state-title">{usersError}</p>
-                  <button type="button" className="ops-btn ops-btn-secondary" onClick={() => openUsers(usersFacility)}>
+                  <p className="ops-state-title">{detailError}</p>
+                  <button type="button" className="ops-btn ops-btn-secondary" onClick={() => openFacility(detailFacility)}>
                     Try again
                   </button>
                 </div>
-              ) : usersData && usersData.users.length === 0 ? (
-                <div className="ops-state">
-                  <span className="ops-state-icon ops-tone-slate"><Icon name="users" size={22} /></span>
-                  <p className="ops-state-title">No users yet</p>
-                  <p className="ops-state-sub">This facility has no user accounts.</p>
-                </div>
-              ) : usersData && (
+              ) : detailData && (
                 <>
-                  <div className="ops-role-summary">
-                    <span className="ops-role-total">{usersData.users.length} {usersData.users.length === 1 ? 'user' : 'users'}</span>
-                    {Object.entries(roleCounts).map(([role, n]) => (
-                      <span key={role} className={`ops-type-badge ops-tone-${roleMeta(role).tone}`}>
-                        {n} {roleMeta(role).label}{n === 1 ? '' : 's'}
-                      </span>
-                    ))}
-                  </div>
-                  <ul className="ops-user-list">
-                    {usersData.users.map((u) => (
-                      <li key={u.user_uid} className={`ops-user-card${u.is_active ? '' : ' is-inactive'}`}>
-                        <span className={`ops-avatar ops-tone-${roleMeta(u.role).tone}`}>{initials(u.user_name)}</span>
-                        <div className="ops-cell-stack ops-user-main">
-                          <div className="ops-user-head">
-                            <span className="ops-cell-primary">{u.user_name}</span>
-                            <span className={`ops-type-badge ops-tone-${roleMeta(u.role).tone}`}>{roleMeta(u.role).label}</span>
-                            {!u.is_active && <span className="ops-type-badge ops-tone-slate">Inactive</span>}
-                          </div>
-                          <span className="ops-cell-secondary"><Icon name="phone" size={13} /> <span className="ops-mono">{u.phone}</span></span>
-                          {u.email && <span className="ops-cell-secondary"><Icon name="mail" size={13} /> {u.email}</span>}
-                        </div>
-                        <span className="ops-user-date" title="Added on">{formatDate(u.created_at)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <section className="ops-detail-section" aria-labelledby="ops-staff-heading">
+                    <div className="ops-detail-heading">
+                      <h3 id="ops-staff-heading">Staff <span className="ops-tab-count">{detailData.staff.length}</span></h3>
+                      <div className="ops-role-summary">
+                        {Object.entries(staffCounts).map(([role, n]) => (
+                          <span key={role} className={`ops-type-badge ops-tone-${staffRoleMeta(role).tone}`}>
+                            {n} {n === 1 ? staffRoleMeta(role).label : staffRoleMeta(role).plural}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {detailData.staff.length === 0 ? (
+                      <p className="ops-detail-empty">No staff recorded for this facility.</p>
+                    ) : (
+                      <ul className="ops-user-list">
+                        {detailData.staff.map((s) => (
+                          <li key={s.staff_uid} className={`ops-user-card${s.is_active ? '' : ' is-inactive'}`}>
+                            <span className={`ops-avatar ops-tone-${staffRoleMeta(s.role).tone}`}>{initials(s.full_name)}</span>
+                            <div className="ops-cell-stack ops-user-main">
+                              <div className="ops-user-head">
+                                <span className="ops-cell-primary">{s.full_name}</span>
+                                <span className={`ops-type-badge ops-tone-${staffRoleMeta(s.role).tone}`}>{staffRoleMeta(s.role).label}</span>
+                                {!s.is_active && <span className="ops-type-badge ops-tone-slate">Inactive</span>}
+                              </div>
+                              <span className="ops-cell-secondary">
+                                {[s.designation, GENDER_LABEL[s.gender]].filter(Boolean).join(' · ') || '—'}
+                              </span>
+                              {s.phone && (
+                                <a className="ops-cell-secondary ops-contact-link" href={`tel:${s.phone}`}>
+                                  <Icon name="phone" size={13} /> <span className="ops-mono">{s.phone}</span>
+                                </a>
+                              )}
+                              {s.email && (
+                                <a className="ops-cell-secondary ops-contact-link" href={`mailto:${s.email}`}>
+                                  <Icon name="mail" size={13} /> {s.email}
+                                </a>
+                              )}
+                            </div>
+                            {s.joined_on && <span className="ops-user-date" title="Joined on">Since {formatDate(s.joined_on)}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+
+                  <section className="ops-detail-section" aria-labelledby="ops-logins-heading">
+                    <div className="ops-detail-heading">
+                      <h3 id="ops-logins-heading">App logins <span className="ops-tab-count">{detailData.users.length}</span></h3>
+                      <div className="ops-role-summary">
+                        {Object.entries(userCounts).map(([role, n]) => (
+                          <span key={role} className={`ops-type-badge ops-tone-${roleMeta(role).tone}`}>
+                            {n} {roleMeta(role).label}{n === 1 ? '' : 's'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="ops-help">People who can sign in to MediZen for this facility.</p>
+                    {detailData.users.length === 0 ? (
+                      <p className="ops-detail-empty">No login accounts yet.</p>
+                    ) : (
+                      <ul className="ops-user-list">
+                        {detailData.users.map((u) => (
+                          <li key={u.user_uid} className={`ops-user-card${u.is_active ? '' : ' is-inactive'}`}>
+                            <span className={`ops-avatar ops-tone-${roleMeta(u.role).tone}`}>{initials(u.user_name)}</span>
+                            <div className="ops-cell-stack ops-user-main">
+                              <div className="ops-user-head">
+                                <span className="ops-cell-primary">{u.user_name}</span>
+                                <span className={`ops-type-badge ops-tone-${roleMeta(u.role).tone}`}>{roleMeta(u.role).label}</span>
+                                {!u.is_active && <span className="ops-type-badge ops-tone-slate">Inactive</span>}
+                              </div>
+                              <span className="ops-cell-secondary"><Icon name="phone" size={13} /> <span className="ops-mono">{u.phone}</span></span>
+                              {u.email && <span className="ops-cell-secondary"><Icon name="mail" size={13} /> {u.email}</span>}
+                            </div>
+                            <span className="ops-user-date" title="Added on">{formatDate(u.created_at)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
                 </>
               )}
             </div>

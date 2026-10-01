@@ -29,6 +29,13 @@ v1.add_api_route(
     response_model=views.FacilityUsersResponse,
     dependencies=[Depends(require_own_tenant), Depends(require_role("ADMIN", "OPS_ADMIN"))],
 )
+v1.add_api_route(
+    "/ops/hospitals/{hospital_uid}/staff",
+    views.facility_staff,
+    methods=["GET"],
+    response_model=views.FacilityStaffResponse,
+    dependencies=[Depends(require_own_tenant), Depends(require_role("ADMIN", "OPS_ADMIN"))],
+)
 v1.add_api_route("/doctors", views.list_doctors, methods=["GET"])
 v1.add_api_route("/doctors/filters", views.doctor_filters, methods=["GET"])
 v1.add_api_route("/agent/ask", views.ask_agent, methods=["POST"], response_model=views.AskResponse)

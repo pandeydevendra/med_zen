@@ -99,6 +99,27 @@ CREATE TABLE doctors (
     FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
 );
 
+-- 5b. STAFF — facility personnel who don't sign in to MediZen (nurses,
+--     office/admin staff, technicians, ...). People who do sign in live in
+--     `users`; this table needs no phone uniqueness, password or login role.
+CREATE TABLE staff (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    staff_uid VARCHAR(36) NOT NULL UNIQUE,
+    hospital_id INT NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    gender ENUM('MALE','FEMALE','OTHER') NULL,
+    staff_role ENUM('NURSE','ADMIN_STAFF','RECEPTIONIST','TECHNICIAN','PHARMACIST','OTHER') NOT NULL,
+    designation VARCHAR(100) NULL,       -- free text, e.g. "OT Nurse", "Clinic Administrator"
+    phone VARCHAR(32) NULL,
+    email VARCHAR(255) NULL,
+    joined_on DATE NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    modified_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
+);
+
 -- 6. SLOT_GROUPS — a doctor's token window on a given date
 CREATE TABLE slot_groups (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -138,6 +159,7 @@ CREATE TABLE appointments (
 -- 8. INDEXES
 CREATE INDEX idx_users_hospital        ON users(hospital_id);
 CREATE INDEX idx_doctors_dept          ON doctors(dept_id);
+CREATE INDEX idx_staff_hospital        ON staff(hospital_id);
 CREATE INDEX idx_slot_doctor_date      ON slot_groups(doctor_id, slot_date);
 CREATE INDEX idx_appointments_doctor   ON appointments(doctor_id);
 CREATE INDEX idx_appointments_slot     ON appointments(slot_group_id);
