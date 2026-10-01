@@ -8,7 +8,8 @@ _LIST_BY_HOSPITAL_SQL = """
            s.phone, s.email, s.joined_on, s.is_active
     FROM staff s
     WHERE s.hospital_id = %s
-    ORDER BY FIELD(s.staff_role, 'NURSE', 'ADMIN_STAFF', 'RECEPTIONIST', 'TECHNICIAN', 'PHARMACIST', 'OTHER'),
+    ORDER BY FIELD(s.staff_role, 'DOCTOR', 'NURSE', 'ADMIN_STAFF', 'RECEPTIONIST', 'TECHNICIAN', 'PHARMACIST',
+                   'ASSISTANT', 'OTHER'),
              s.full_name
 """
 

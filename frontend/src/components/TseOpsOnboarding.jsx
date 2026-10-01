@@ -70,11 +70,13 @@ const roleMeta = (role) => ROLE_META[role] || { label: role, tone: 'slate' };
 
 // Non-login staff roles (the `staff` table's staff_role).
 const STAFF_ROLE_META = {
+  DOCTOR: { label: 'Doctor', plural: 'Doctors', tone: 'purple' },
   NURSE: { label: 'Nurse', plural: 'Nurses', tone: 'green' },
   ADMIN_STAFF: { label: 'Admin staff', plural: 'Admin staff', tone: 'blue' },
   RECEPTIONIST: { label: 'Receptionist', plural: 'Receptionists', tone: 'purple' },
   TECHNICIAN: { label: 'Technician', plural: 'Technicians', tone: 'slate' },
   PHARMACIST: { label: 'Pharmacist', plural: 'Pharmacists', tone: 'slate' },
+  ASSISTANT: { label: 'Assistant', plural: 'Assistants', tone: 'slate' },
 };
 const staffRoleMeta = (role) => STAFF_ROLE_META[role] || { label: 'Other', plural: 'Other', tone: 'slate' };
 const GENDER_LABEL = { MALE: 'Male', FEMALE: 'Female', OTHER: 'Other' };
