@@ -108,7 +108,8 @@ CREATE TABLE staff (
     hospital_id INT NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     gender ENUM('MALE','FEMALE','OTHER') NULL,
-    staff_role ENUM('NURSE','ADMIN_STAFF','RECEPTIONIST','TECHNICIAN','PHARMACIST','OTHER') NOT NULL,
+    -- DOCTOR is a directory entry only (no login); see migrations/002.
+    staff_role ENUM('NURSE','ADMIN_STAFF','RECEPTIONIST','TECHNICIAN','PHARMACIST','OTHER','DOCTOR','ASSISTANT') NOT NULL,
     designation VARCHAR(100) NULL,       -- free text, e.g. "OT Nurse", "Clinic Administrator"
     phone VARCHAR(32) NULL,
     email VARCHAR(255) NULL,

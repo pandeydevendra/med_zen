@@ -41,21 +41,21 @@ INSERT INTO staff (staff_uid, hospital_id, full_name, gender, staff_role, design
 SELECT UUID(), h.id, v.full_name, v.gender, v.staff_role, v.designation, v.phone, v.email, v.joined_on
 FROM hospitals h
 JOIN (
-    SELECT 'Ravi Kumar Singh' AS full_name, 'MALE' AS gender, 'NURSE' AS staff_role,
+    SELECT 'Ravi Kumar' AS full_name, 'MALE' AS gender, 'NURSE' AS staff_role,
            'Senior Staff Nurse (OT)' AS designation, '9430012301' AS phone,
-           'ravi.singh@example.com' AS email, DATE('2019-04-15') AS joined_on
+           'ravi@gmail.com' AS email, DATE('2019-04-15') AS joined_on
     UNION ALL
-    SELECT 'Sanjay Kumar Yadav', 'MALE', 'NURSE',
+    SELECT 'Sanjay Kumar', 'MALE', 'NURSE',
            'Staff Nurse', '9430012302',
-           'sanjay.yadav@example.com', DATE('2021-07-01')
+           'sanjay@gmail.com', DATE('2021-07-01')
     UNION ALL
     SELECT 'Priya Kumari', 'FEMALE', 'NURSE',
            'Staff Nurse', '9430012303',
-           'priya.kumari@example.com', DATE('2022-01-10')
+           'priya@gmail.com', DATE('2022-01-10')
     UNION ALL
-    SELECT 'Amit Ranjan Sinha', 'MALE', 'ADMIN_STAFF',
+    SELECT 'Anita Kumari', 'MALE', 'ADMIN_STAFF',
            'Clinic Administrator', '9430012304',
-           'amit.sinha@example.com', DATE('2020-09-21')
+           'anita@gmail.com', DATE('2020-09-21')
 ) v
 WHERE h.hospital_name = 'Dr. A K Tripathi'
   AND h.org_type != 'PLATFORM'
