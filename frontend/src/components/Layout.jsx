@@ -8,7 +8,7 @@ const Layout = ({ children, onLogout, role, onRoleChange, page, onNavigate, hosp
     <div className="app-container">
       <Sidebar page={page} onNavigate={onNavigate} role={role} collapsed={collapsed} hospitalName={hospitalName} />
       <main className="main-content">
-        <header className="topbar" style={{ backgroundColor: 'var(--warning-light, #fffbeb)' }}>
+        <header className="topbar">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -18,8 +18,10 @@ const Layout = ({ children, onLogout, role, onRoleChange, page, onNavigate, hosp
             >
               {collapsed ? '☰' : '⟨'}
             </button>
-            <h2 className="text-xl m-0 text-danger">DEMO ENVIRONMENT</h2>
-            <span className="text-muted text-sm ml-2">No real patient data is saved.</span>
+            <h2 className="text-xl m-0">{hospitalName || 'MediZen'}</h2>
+            <span className="text-muted desk-small" style={{ marginLeft: '0.5rem' }}>
+              {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             {userName && <span className="text-sm font-semibold">👤 {userName}</span>}
@@ -27,11 +29,11 @@ const Layout = ({ children, onLogout, role, onRoleChange, page, onNavigate, hosp
               value={role}
               onChange={e => onRoleChange?.(e.target.value)}
               className="role-switcher"
-              title="Switch demo role"
+              title="Switch view"
             >
-              <option value="receptionist">Demo Receptionist</option>
-              <option value="doctor">Demo Doctor</option>
-              <option value="admin">Demo Admin</option>
+              <option value="receptionist">Booking desk</option>
+              <option value="doctor">Doctor queue</option>
+              <option value="admin">Admin overview</option>
             </select>
             <button className="btn-outline" onClick={onLogout}>Logout</button>
           </div>

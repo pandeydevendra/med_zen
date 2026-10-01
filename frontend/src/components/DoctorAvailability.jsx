@@ -1,120 +1,136 @@
-import React, { useState } from 'react';
-import { useBooking } from '../context/BookingContext';
-import { mockDoctors, mockSlots } from '../mockData';
+import React, { useMemo, useState } from 'react';
+import { addDaysISO, formatDate, formatFee, formatTime, todayISO, useBooking } from '../context/BookingContext';
+
+const BOOKING_WINDOW_DAYS = 60; // matches backend/booking.py
 
 const DoctorAvailability = () => {
-  const { selectedDoctor, setSelectedDoctor, selectedSlot, setSelectedSlot, selectedPatient } = useBooking();
+  const {
+    date, setDate, doctors, doctorsLoading, doctorsError, bookableDate, refresh,
+    selectedDoctor, selectedSlot, selectSlot, selectedPatient,
+  } = useBooking();
   const [activeTab, setActiveTab] = useState('All');
 
-  const departments = ['All', ...new Set(mockDoctors.map(d => d.department))];
-  const filteredDocs = activeTab === 'All' ? mockDoctors : mockDoctors.filter(d => d.department === activeTab);
+  const departments = useMemo(
+    () => ['All', ...new Set(doctors.map((d) => d.department || 'General'))],
+    [doctors],
+  );
+  const department = departments.includes(activeTab) ? activeTab : 'All';
+  const filteredDocs = department === 'All' ? doctors : doctors.filter((d) => (d.department || 'General') === department);
+  const weekday = new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', { weekday: 'long' });
 
   const handleDoctorClick = (doc) => {
-    if (!doc.available) return;
-    setSelectedDoctor(doc);
-    // Auto-select next available slot
-    const nextSlot = mockSlots.find(slot => slot.available);
-    if (nextSlot) setSelectedSlot(nextSlot);
-  };
-
-  const getSlotStatus = (slot, doc) => {
-    if (selectedDoctor?.id === doc.id && selectedSlot?.id === slot.id) return 'selected';
-    if (!slot.available) return 'booked';
-    return 'available';
-  };
-
-  const getStatusColor = (status) => {
-    if (status === 'On Time') return 'var(--success)';
-    if (status.includes('late')) return 'var(--warning)';
-    if (status === 'On Leave' || status === 'Emergency Busy') return 'var(--danger)';
-    return 'var(--text-muted)';
+    const next = doc.slots.find((s) => s.available);
+    if (next) selectSlot(doc, next);
   };
 
   return (
-    <div className={`card w-full ${!selectedPatient ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s', opacity: !selectedPatient ? 0.6 : 1, pointerEvents: !selectedPatient ? 'none' : 'auto'}}>
-      <h3 className="text-lg font-semibold mb-4">2. Select Doctor & Slot</h3>
-      
-      <div className="flex gap-2 mb-4" style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
-        {departments.map(dept => (
-          <button 
-            key={dept}
-            onClick={() => setActiveTab(dept)}
-            className="btn-outline"
-            style={{ 
-              padding: '0.5rem 1rem', 
-              borderRadius: '20px', 
-              backgroundColor: activeTab === dept ? 'var(--primary)' : 'white',
-              color: activeTab === dept ? 'white' : 'var(--text-main)',
-              border: activeTab === dept ? 'none' : '1px solid var(--border)'
-            }}
-          >
-            {dept}
-          </button>
-        ))}
+    <div className="card w-full" style={{ transition: 'opacity 0.2s', opacity: selectedPatient ? 1 : 0.6, pointerEvents: selectedPatient ? 'auto' : 'none' }}>
+      <div className="desk-card-head">
+        <h3 className="text-lg font-semibold m-0">2. Select Doctor &amp; Slot</h3>
+        <label className="desk-date">
+          <span>Date</span>
+          <input type="date" value={date} min={todayISO()} max={addDaysISO(todayISO(), BOOKING_WINDOW_DAYS)}
+            onChange={(e) => e.target.value && setDate(e.target.value)} />
+        </label>
       </div>
 
-      <div className="flex flex-col gap-4" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '1rem'}}>
-        {filteredDocs.map(doc => {
-          const isDocSelected = selectedDoctor?.id === doc.id;
-          return (
-            <div 
-              key={doc.id} 
-              className="p-4 border rounded" 
-              style={{ 
-                borderColor: isDocSelected ? 'var(--primary)' : 'var(--border)', 
-                borderStyle: 'solid', 
-                borderWidth: isDocSelected ? '2px' : '1px',
-                cursor: doc.available ? 'pointer' : 'default',
-                backgroundColor: isDocSelected ? '#eff6ff' : 'white'
-              }}
-              onClick={() => handleDoctorClick(doc)}
+      {departments.length > 2 && (
+        <div className="flex gap-2 mb-4" style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
+          {departments.map((dept) => (
+            <button
+              key={dept}
+              type="button"
+              onClick={() => setActiveTab(dept)}
+              className={department === dept ? 'desk-chip is-active' : 'desk-chip'}
             >
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <div className="font-semibold text-lg">{doc.name}</div>
-                  <div className="text-muted text-sm">{doc.department}</div>
+              {dept}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!bookableDate && !doctorsLoading && (
+        <div className="desk-note mb-4">Bookings are open from today up to {BOOKING_WINDOW_DAYS} days ahead. Showing existing bookings only.</div>
+      )}
+
+      {doctorsLoading ? (
+        <p className="text-muted">Loading doctors…</p>
+      ) : doctorsError ? (
+        <div className="desk-error">
+          {doctorsError} <button type="button" className="desk-link" onClick={refresh}>Try again</button>
+        </div>
+      ) : doctors.length === 0 ? (
+        <div className="desk-empty">
+          <div className="font-semibold">No doctors are set up for booking yet.</div>
+          <div className="text-muted desk-small">Ask your MediZen administrator to add your doctors, their consultation hours and fees.</div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4" style={{ maxHeight: '460px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+          {filteredDocs.map((doc) => {
+            const isDocSelected = selectedDoctor?.doctor_uid === doc.doctor_uid;
+            const open = doc.slots.filter((s) => s.available).length;
+            const booked = doc.slots.filter((s) => s.status === 'booked').length;
+            const availability = open
+              ? `${open} of ${doc.slots.length} slots open`
+              : booked === doc.slots.length ? 'Fully booked' : 'No slots left';
+            return (
+              <div
+                key={doc.doctor_uid}
+                className={`desk-doctor${isDocSelected ? ' is-selected' : ''}${open ? '' : ' is-unavailable'}`}
+                onClick={() => handleDoctorClick(doc)}
+              >
+                <div className="flex justify-between" style={{ gap: '1rem', alignItems: 'flex-start' }}>
+                  <div>
+                    <div className="font-semibold text-lg">{doc.name}</div>
+                    <div className="text-muted desk-small">{doc.department || 'General'}</div>
+                    {doc.weekly_hours.length > 0 && (
+                      <div className="text-muted desk-small">OPD: {doc.weekly_hours.join(' · ')}</div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div className="font-semibold">{formatFee(doc.consultation_fee)}</div>
+                    <div className="desk-small text-muted">consultation</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  {!doc.available && <span className="text-danger font-semibold">UNAVAILABLE</span>}
-                  {doc.available && (
-                    <div style={{ color: getStatusColor(doc.status), fontSize: '0.875rem', fontWeight: '500' }}>
-                      {doc.status}
+
+                {doc.slots.length === 0 ? (
+                  <div className="desk-small text-muted mt-2">Not available on {weekday}.</div>
+                ) : (
+                  <>
+                    <div className="desk-small text-muted mt-2">
+                      {doc.windows.map((w) => `${formatTime(w.start)} – ${formatTime(w.end)}`).join(', ')}
+                      {' · '}{availability}
                     </div>
-                  )}
-                </div>
+                    <div className="slot-grid">
+                      {doc.slots.map((slot) => {
+                        const isSelected = isDocSelected && selectedSlot?.time === slot.time;
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            className={`slot-btn${isSelected ? ' selected' : ''}`}
+                            disabled={!slot.available}
+                            title={slot.status === 'booked' ? 'Already booked' : slot.status === 'past' ? 'Time has passed' : `Token ${slot.token}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              selectSlot(doc, slot);
+                            }}
+                          >
+                            {formatTime(slot.time)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
-              
-              {doc.available && (
-                <div className="slot-grid">
-                  {mockSlots.map(slot => {
-                    const status = getSlotStatus(slot, doc);
-                    const isHighlighted = status === 'available' && !selectedSlot && slot === mockSlots.find(s => s.available);
-                    return (
-                      <button 
-                        key={slot.id}
-                        className={`slot-btn ${status}`}
-                        style={{
-                          backgroundColor: status === 'selected' ? 'var(--primary)' : status === 'booked' ? 'var(--muted)' : isHighlighted ? '#e0f2fe' : 'white',
-                          color: status === 'selected' ? 'white' : status === 'booked' ? 'var(--text-muted)' : 'var(--text-main)',
-                          border: isHighlighted ? '2px solid var(--primary)' : '1px solid var(--border)'
-                        }}
-                        disabled={status === 'booked'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedDoctor(doc);
-                          setSelectedSlot(slot);
-                        }}
-                      >
-                        {slot.time}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+      {!doctorsLoading && !doctorsError && doctors.length > 0 && (
+        <div className="desk-small text-muted mt-2">{formatDate(date)}</div>
+      )}
     </div>
   );
 };

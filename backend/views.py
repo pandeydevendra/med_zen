@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
+import booking
 from auth import login_failure_reason, verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
 from menu import get_menu_items
@@ -178,6 +179,8 @@ class FacilityStaffMember(BaseModel):
     gender: Optional[str] = None
     role: str
     designation: Optional[str] = None
+    department: Optional[str] = None
+    consultation_fee: Optional[float] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     joined_on: Optional[date] = None
@@ -326,3 +329,65 @@ def tse_ops_hospitals():
         ],
         "facility_types": FACILITY_TYPES,
     }
+
+
+# ---------------------------------------------------------------------------
+# Booking desk — facility staff (hospital JWT) working on their own facility's
+# doctors, patients and appointments; see booking.py. Roles are enforced in
+# url.py; a DOCTOR only ever sees and updates their own appointments.
+# ---------------------------------------------------------------------------
+BOOKING_STAFF = ("ADMIN", "RECEPTIONIST")
+BOOKING_ALL = ("ADMIN", "RECEPTIONIST", "DOCTOR")
+
+
+class CreatePatientRequest(BaseModel):
+    full_name: str
+    phone: str
+    age: Optional[int] = None
+    gender: Optional[str] = None
+
+
+class BookAppointmentRequest(BaseModel):
+    doctor_uid: str
+    date: date
+    time: str
+    patient_uid: str
+
+
+class AppointmentStatusRequest(BaseModel):
+    status: str
+
+
+def booking_doctors(date: date, user: dict = Depends(require_role(*BOOKING_ALL))):
+    return booking.list_doctors_with_slots(user["hospital_id"], date)
+
+
+def booking_search_patients(q: str = "", user: dict = Depends(require_role(*BOOKING_STAFF))):
+    return {"patients": booking.search_patients(user["hospital_id"], q)}
+
+
+def booking_create_patient(payload: CreatePatientRequest, user: dict = Depends(require_role(*BOOKING_STAFF))):
+    patient = booking.create_patient(user["hospital_id"], int(user["sub"]), **payload.model_dump())
+    print(f"[booking/patients] created patient_uid={patient['patient_uid']} by sub={user['sub']}")
+    return patient
+
+
+def booking_appointments(date: date, user: dict = Depends(require_role(*BOOKING_ALL))):
+    doctor_user_id = int(user["sub"]) if user["role"] == "DOCTOR" else None
+    return {"date": date, "appointments": booking.list_appointments(user["hospital_id"], date, doctor_user_id=doctor_user_id)}
+
+
+def booking_book_appointment(payload: BookAppointmentRequest, user: dict = Depends(require_role(*BOOKING_STAFF))):
+    appointment = booking.book_appointment(
+        user["hospital_id"], int(user["sub"]), doctor_uid=payload.doctor_uid, slot_date=payload.date,
+        slot_time=payload.time, patient_uid=payload.patient_uid,
+    )
+    print(f"[booking/appointments] booked {appointment['appointment_uid']} token={appointment['token']} by sub={user['sub']}")
+    return appointment
+
+
+def booking_update_status(appointment_uid: str, payload: AppointmentStatusRequest,
+                          user: dict = Depends(require_role(*BOOKING_ALL))):
+    booking.update_appointment_status(user["hospital_id"], user, appointment_uid, payload.status)
+    print(f"[booking/appointments] {appointment_uid} -> {payload.status.upper()} by sub={user['sub']}")
+    return {"appointment_uid": appointment_uid, "status": payload.status.upper()}
