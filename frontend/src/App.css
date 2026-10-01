@@ -789,6 +789,18 @@
 }
 
 .ops-cell-actions { justify-self: end; }
+.ops-row-clickable { cursor: pointer; }
+
+/* Facility details panel: Staff + App logins sections */
+.ops-detail-section { display: flex; flex-direction: column; gap: 0.75rem; }
+.ops-detail-section + .ops-detail-section { padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.ops-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.ops-detail-heading h3 { display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem; font-weight: 700; }
+.ops-detail-heading .ops-tab-count { background: var(--ops-slate-bg); color: var(--ops-slate); }
+.ops-detail-section .ops-help { margin-top: -0.5rem; }
+.ops-detail-empty { font-size: 0.85rem; color: var(--text-muted); padding: 0.75rem 0; }
+.ops-contact-link { text-decoration: none; width: fit-content; }
+.ops-contact-link:hover { color: var(--primary); }
 
 /* Facility users panel */
 .ops-role-summary { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }

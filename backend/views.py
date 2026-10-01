@@ -4,7 +4,7 @@ handlers are listed in url.py.
 """
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
@@ -14,7 +14,7 @@ from auth import login_failure_reason, verify_credentials
 from doctor_agent.service import filter_doctors, get_agent, get_filter_options, reset_session
 from menu import get_menu_items
 from middleware import require_role
-from ops_onboarding import create_hospital_with_admin, list_facilities, list_facility_users
+from ops_onboarding import create_hospital_with_admin, list_facilities, list_facility_staff, list_facility_users
 from user_auth import login_hospital_user, login_ops_user
 
 
@@ -166,6 +166,36 @@ def facility_users(hospital_uid: str):
     result = list_facility_users(hospital_uid)
     print(f"[ops/hospitals/users] hospital_uid={hospital_uid} count={len(result['users'])}")
     return FacilityUsersResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# Facility staff — non-login personnel (nurses, admin staff, ...) from the
+# `staff` table. Same access rule as facility users above.
+# ---------------------------------------------------------------------------
+class FacilityStaffMember(BaseModel):
+    staff_uid: str
+    full_name: str
+    gender: Optional[str] = None
+    role: str
+    designation: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    joined_on: Optional[date] = None
+    is_active: bool
+
+
+class FacilityStaffResponse(BaseModel):
+    hospital_uid: str
+    hospital_name: str
+    org_type: str
+    is_active: bool
+    staff: list[FacilityStaffMember]
+
+
+def facility_staff(hospital_uid: str):
+    result = list_facility_staff(hospital_uid)
+    print(f"[ops/hospitals/staff] hospital_uid={hospital_uid} count={len(result['staff'])}")
+    return FacilityStaffResponse(**result)
 
 
 # ---------------------------------------------------------------------------

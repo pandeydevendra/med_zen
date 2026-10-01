@@ -13,6 +13,7 @@ import bcrypt
 from fastapi import HTTPException
 
 from data_access_layer.hospital_dal import HospitalDAL
+from data_access_layer.staff_dal import StaffDAL
 from data_access_layer.user_dal import UserDAL
 from db import get_connection
 from uid import uuid7
@@ -100,17 +101,31 @@ def list_facilities() -> list[dict]:
     return HospitalDAL.list_facilities()
 
 
-def list_facility_users(hospital_uid: str) -> dict:
-    """One facility plus every user under it (all roles, active or not).
-    404s for unknown uids and for the reserved PLATFORM tenant, so ops staff
-    accounts can't be listed through this."""
+def _find_facility_or_404(hospital_uid: str) -> dict:
+    # Never matches the reserved PLATFORM tenant, so ops accounts can't be
+    # listed through the per-facility endpoints.
     facility = HospitalDAL.find_facility(hospital_uid)
     if facility is None:
         raise HTTPException(status_code=404, detail="Facility not found")
+    return facility
+
+
+def _facility_header(facility: dict) -> dict:
     return {
         "hospital_uid": facility["hospital_uid"],
         "hospital_name": facility["hospital_name"],
         "org_type": facility["org_type"],
         "is_active": bool(facility["is_active"]),
-        "users": UserDAL.list_by_hospital(facility["id"]),
     }
+
+
+def list_facility_users(hospital_uid: str) -> dict:
+    """One facility plus every login account under it (all roles, active or not)."""
+    facility = _find_facility_or_404(hospital_uid)
+    return {**_facility_header(facility), "users": UserDAL.list_by_hospital(facility["id"])}
+
+
+def list_facility_staff(hospital_uid: str) -> dict:
+    """One facility plus its non-login staff (nurses, admin staff, ...)."""
+    facility = _find_facility_or_404(hospital_uid)
+    return {**_facility_header(facility), "staff": StaffDAL.list_by_hospital(facility["id"])}
