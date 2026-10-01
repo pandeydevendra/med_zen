@@ -47,4 +47,15 @@ v1.add_api_route(
 )
 v1.add_api_route("/tse-ops/hospitals", views.tse_ops_hospitals, methods=["GET"])
 
+# Booking desk — hospital JWT, always scoped to the caller's own facility.
+# Role checks are Depends() on each handler (see views.BOOKING_STAFF/BOOKING_ALL).
+v1.add_api_route("/booking/doctors", views.booking_doctors, methods=["GET"])
+v1.add_api_route("/booking/patients", views.booking_search_patients, methods=["GET"])
+v1.add_api_route("/booking/patients", views.booking_create_patient, methods=["POST"])
+v1.add_api_route("/booking/appointments", views.booking_appointments, methods=["GET"])
+v1.add_api_route("/booking/appointments", views.booking_book_appointment, methods=["POST"])
+v1.add_api_route(
+    "/booking/appointments/{appointment_uid}/status", views.booking_update_status, methods=["POST"]
+)
+
 router.include_router(v1)

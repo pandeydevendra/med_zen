@@ -511,6 +511,12 @@ const TseOpsOnboarding = ({ userName, onLogout }) => {
                               <span className="ops-cell-secondary">
                                 {[s.designation, GENDER_LABEL[s.gender]].filter(Boolean).join(' · ') || '—'}
                               </span>
+                              {(s.department || s.consultation_fee != null) && (
+                                <span className="ops-cell-secondary">
+                                  {[s.department, s.consultation_fee != null && `Fee ₹${Number(s.consultation_fee).toLocaleString('en-IN')}`]
+                                    .filter(Boolean).join(' · ')}
+                                </span>
+                              )}
                               {s.phone && (
                                 <a className="ops-cell-secondary ops-contact-link" href={`tel:${s.phone}`}>
                                   <Icon name="phone" size={13} /> <span className="ops-mono">{s.phone}</span>

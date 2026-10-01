@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import './App.css';
 import { BookingProvider } from './context/BookingContext';
 import Layout from './components/Layout';
@@ -13,6 +13,13 @@ function App() {
   const [auth, setAuth] = useState({ isAuthenticated: false, role: null, hospitalName: null, userName: null });
   const [page, setPage] = useState('dashboard');
 
+  // Stable identity: BookingProvider refetches whenever this changes.
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('medzen_token');
+    setAuth({ isAuthenticated: false, role: null, hospitalName: null, userName: null });
+    setPage('dashboard');
+  }, []);
+
   if (!auth.isAuthenticated) {
     return (
       <Login
@@ -25,9 +32,9 @@ function App() {
   }
 
   return (
-    <BookingProvider>
+    <BookingProvider onUnauthorized={handleLogout}>
       <Layout
-        onLogout={() => setAuth({ isAuthenticated: false, role: null, hospitalName: null, userName: null })}
+        onLogout={handleLogout}
         role={auth.role}
         onRoleChange={(role) => setAuth(prev => ({ ...prev, role }))}
         hospitalName={auth.hospitalName}
